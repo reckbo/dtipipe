@@ -1,0 +1,15 @@
+__pycache__
+
+.venv
+
+*.egg-info
+*.swp
+*.swo
+*.tex
+*.aux
+*.log
+*.toc
+*.pdf
+README.out
+
+output/
