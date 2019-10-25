@@ -1,4 +1,4 @@
-import luigi
+import luigi.util
 from luigi import Parameter
 from plumbum import local
 
