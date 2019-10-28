@@ -44,11 +44,12 @@ def test_register(fsldir):
         assert filecmp.cmp(expected_output, test_output)
 
 
-# with local.tempdir() as tmpdir:
-#     with local.cwd(tmpdir):
-#         tmpdir = local.path(tmpdir)
+def eddy_pnl(dwi, output, fsldir=None):
 
-#         logging.info('Dice the DWI')
+    with local.tempdir() as tmpdir, local.cwd(tmpdir), local.env(**util.fsl_env(fsldir)):
+        tmpdir = local.path(tmpdir)
+
+        log.info('Dice the DWI')
 #         fslsplit[self.dwi] & FG
 
 #         logging.info('Extract the B0')

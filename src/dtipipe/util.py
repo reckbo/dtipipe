@@ -1,3 +1,4 @@
+import numpy as np
 import nibabel as nib
 from plumbum import local
 
@@ -28,3 +29,24 @@ def save_nifti(output_name, data, affine, hdr):
         hdr.set_data_dtype('float32')
     result_img = nib.Nifti1Image(data, affine, header=hdr)
     result_img.to_filename(output_name)
+
+
+def compare_niftis(nifti_file1, nifti_file2):
+    nifti1 = nib.load(str(nifti_file1))
+    nifti2 = nib.load(str(nifti_file2))
+    data_is_equal = (np.count_nonzero(nifti1.get_data() - nifti2.get_data()) == 0)
+    if not data_is_equal:
+        print("Nifti data are not the same:")
+        print(nifti_file1)
+        print(nifti_file2)
+        return False
+    headers_are_equal = (nifti1.header == nifti2.header)
+    if not headers_are_equal:
+        print("Nifti headers are not the same:")
+        print(nifti_file1)
+        print((nifti1.header.items()))
+        print(20*'-')
+        print(nifti_file2)
+        print((nifti2.header.items()))
+        return False
+    return True

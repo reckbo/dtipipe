@@ -1,4 +1,5 @@
 import logging
+import filecmp
 
 import pytest
 from plumbum import local, cli
@@ -67,9 +68,14 @@ def test_bse(extract_type, fsldir):
     with local.env(util.fsl_env(fsldir)):
         with local.tempdir() as tmpdir:
             tmpdir = local.path('/tmp/tmp')
+            expected_output = dtipipe.TEST_DATA / f'dwi_b0_{extract_type}.nii.gz'
             test_output = tmpdir / f'dwi_b0_{extract_type}.nii.gz'
             bse(dtipipe.TEST_DATA / 'dwi.nii.gz', test_output, extract_type=extract_type,
                 fsldir=fsldir)
+            if extract_type == 'average':
+                assert util.compare_niftis(test_output, expected_output)
+            else:
+                assert filecmp.cmp(test_output, expected_output)
 
 
 class Cli(cli.Application):
