@@ -23,3 +23,6 @@ flake8 = "^3.7"
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
+[tool.poetry.scripts]
+bse = "dtipipe:bse.Cli.run"

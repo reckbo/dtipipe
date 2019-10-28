@@ -3,6 +3,7 @@ __version__ = '0.1.0'
 from plumbum import local
 
 from . import tasks
+from . import bse
 from . import eddy_pnl
 
 
