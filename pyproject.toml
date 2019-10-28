@@ -12,6 +12,7 @@ pandas = "^0.25.2"
 toolz = "^0.10.0"
 luigi = "^2.8"
 coloredlogs = "^10.0"
+nibabel = "^2.5"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"

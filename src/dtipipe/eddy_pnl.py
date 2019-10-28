@@ -19,12 +19,8 @@ log = logging.getLogger(__name__)
 
 
 def register(source_nii, target_nii, output, fsldir=None):
-    if fsldir:
-        fsl_env = util.get_fsl_env(fsldir)
-    else:
-        fsl_env = {}
     log.info(f'Run FSL flirt affine registration: {source_nii} -> {target_nii}')
-    with local.env(**fsl_env):
+    with local.env(**util.fsl_env(fsldir)):
         local['flirt']('-interp', 'sinc',
                        '-sincwidth', '7',
                        '-sincwindow', 'blackman',
@@ -36,6 +32,7 @@ def register(source_nii, target_nii, output, fsldir=None):
                        '-paddingsize', '1')
 
 
+@pytest.mark.unit
 def test_register(fsldir):
     with local.tempdir() as tmpdir:
         tmpdir = local.path('/tmp/tmp')
@@ -46,6 +43,26 @@ def test_register(fsldir):
         register(dwi10, dwi0, test_output, fsldir=fsldir)
         assert filecmp.cmp(expected_output, test_output)
 
+
+# with local.tempdir() as tmpdir:
+#     with local.cwd(tmpdir):
+#         tmpdir = local.path(tmpdir)
+
+#         logging.info('Dice the DWI')
+#         fslsplit[self.dwi] & FG
+
+#         logging.info('Extract the B0')
+#         check_call((' ').join([pjoin(FILEDIR,'bse.py'), '-i', self.dwi._path, '-o', 'b0.nii.gz']), shell= True)
+
+#         logging.info('Register each volume to the B0')
+#         vols = sorted(tmpdir // (dicePrefix + '*.nii.gz'))
+
+#         # use the following multi-processed loop
+#         pool= Pool(int(self.nproc))
+#         res= pool.map_async(_Register_vol, vols)
+#         volsRegistered= res.get()
+#         pool.close()
+#         pool.join()
 
 # class App(cli.Application):
 #     '''Eddy current correction.'''
