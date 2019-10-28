@@ -62,7 +62,7 @@ def eddy_pnl(dwi, output, nproc=20, fsldir=None, debug=False):
     output = local.path(output)
     output_bvec = output.with_suffix('.bvec', depth=2)
     output_bval = output.with_suffix('.bval', depth=2)
-    output_transforms_tar = output[:-9] + '-xfms.tar.gz'
+    output_transforms_tar = output[:-7] + '-xfms.tar.gz'
     output_debug = output.parent / f"eddy-debug-{getpid()}"
 
     with local.tempdir() as tmpdir, local.cwd(tmpdir), local.env(**util.fsl_env(fsldir)):
