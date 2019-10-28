@@ -26,3 +26,4 @@ build-backend = "poetry.masonry.api"
 
 [tool.poetry.scripts]
 bse = "dtipipe:bse.Cli.run"
+eddy_pnl = "dtipipe:eddy_pnl.Cli.run"

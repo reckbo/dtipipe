@@ -1,19 +1,18 @@
 import sys
 import logging
 import filecmp
-# from os import getpid
-# from multiprocessing import Pool
-# from subprocess import check_call
-import pytest
+from os import getpid
+from multiprocessing import Pool
 
+import coloredlogs
+import pytest
 import numpy as np
-from plumbum import local, cli, FG
+from plumbum import local, cli
 
 import dtipipe
 from . import util
+from . import bse
 
-# from conversion import read_bvecs, write_bvecs
-# from util import logfmt, TemporaryDirectory, pjoin, FILEDIR, N_PROC, dirname
 
 log = logging.getLogger(__name__)
 
@@ -44,136 +43,119 @@ def test_register(fsldir):
         assert filecmp.cmp(expected_output, test_output)
 
 
-def eddy_pnl(dwi, output, fsldir=None):
+def _multiprocessing_register(source_nii):
+    output = source_nii.with_suffix('.inb0.nii.gz', depth=2)
+    register(source_nii=source_nii,
+             target_nii='b0.nii.gz',
+             output=output)
+    return output
+
+
+def eddy_pnl(dwi, output, nproc=20, fsldir=None, debug=False):
+    """
+    Eddy current correction.
+    """
+
+    dwi_file = local.path(dwi)
+    bvec_file = dwi_file.with_suffix('.bvec', depth=2)
+    bval_file = dwi_file.with_suffix('.bval', depth=2)
+    output = local.path(output)
+    output_bvec = output.with_suffix('.bvec', depth=2)
+    output_bval = output.with_suffix('.bval', depth=2)
+    output_transforms_tar = output[:-9] + '-xfms.tar.gz'
+    output_debug = output.parent / f"eddy-debug-{getpid()}"
 
     with local.tempdir() as tmpdir, local.cwd(tmpdir), local.env(**util.fsl_env(fsldir)):
-        tmpdir = local.path(tmpdir)
+
+        fslsplit = local['fslsplit']
+        fslmerge = local['fslmerge']
 
         log.info('Dice the DWI')
-#         fslsplit[self.dwi] & FG
+        fslsplit(dwi_file)
+        vols = sorted(tmpdir // ('vol*.nii.gz'))
+        log.debug(f'Split volumes: {vols}')
 
-#         logging.info('Extract the B0')
-#         check_call((' ').join([pjoin(FILEDIR,'bse.py'), '-i', self.dwi._path, '-o', 'b0.nii.gz']), shell= True)
+        log.info('Extract the B0')
+        bse.bse(dwi_file, 'b0.nii.gz')
 
-#         logging.info('Register each volume to the B0')
-#         vols = sorted(tmpdir // (dicePrefix + '*.nii.gz'))
+        pool = Pool(int(nproc))
+        res = pool.map_async(_multiprocessing_register, vols)
+        registered_vols = res.get()
+        pool.close()
+        pool.join()
 
-#         # use the following multi-processed loop
-#         pool= Pool(int(self.nproc))
-#         res= pool.map_async(_Register_vol, vols)
-#         volsRegistered= res.get()
-#         pool.close()
-#         pool.join()
+        fslmerge('-t', 'EddyCorrect-DWI.nii.gz', registered_vols)
+        transforms = sorted(tmpdir.glob('vol*.txt'))
 
-# class App(cli.Application):
-#     '''Eddy current correction.'''
+        log.info('Extract the rotations and realign the gradients')
+        bvecs = util.read_bvecs(bvec_file)
+        bvecs_new = bvecs.copy()
+        for i, t in enumerate(transforms):
+            log.info('Apply ' + t)
+            tra = np.loadtxt(t)
+            # remove the translation
+            aff = np.matrix(tra[0:3, 0:3])  # FIXME Use ndarray to suppress warning
+            # compute the finite strain of aff to get the rotation
+            rot = aff*aff.T
+            # compute the square root of rot
+            [el, ev] = np.linalg.eig(rot)
+            eL = np.identity(3)*np.sqrt(el)
+            sq = ev*eL*ev.I
+            # finally the rotation is defined as
+            rot = sq.I*aff
+            bvecs_new[i] = np.dot(rot, bvecs[i]).tolist()[0]
 
-#     debug = cli.Flag('-d', help='Debug, saves registrations to eddy-debug-<pid>')
-#     dwi = cli.SwitchAttr('-i', cli.ExistingFile, help='DWI in nifti', mandatory= True)
-#     bvalFile = cli.SwitchAttr('--bvals', cli.ExistingFile, help='bval file for DWI', mandatory= True)
-#     bvecFile = cli.SwitchAttr('--bvecs', cli.ExistingFile, help='bvec file for DWI', mandatory= True)
-#     out = cli.SwitchAttr('-o', help='Prefix for eddy corrected DWI', mandatory= True)
-#     overwrite = cli.Flag('--force', default=False, help='Force overwrite')
-#     nproc = cli.SwitchAttr(
-#         ['-n', '--nproc'], help='''number of threads to use, if other processes in your computer 
-#         becomes sluggish/you run into memory error, reduce --nproc''', default= N_PROC)
+        log.info(f'Copy EddyCorrect-DWI.nii.gz to {output}')
+        local.path('EddyCorrect-DWI.nii.gz').copy(output)
 
-#     def main(self):
-#         self.out = local.path(self.out)
-#         if self.out.exists():
-#             if self.overwrite:
-#                 self.out.delete()
-#             else:
-#                 logging.error("{} exists, use '--force' to overwrite it".format(self.out))
-#                 sys.exit(1)
+        log.info(f'Make {output_bvec}')
+        util.write_bvecs(bvecs_new, output_bvec)
 
-#         outxfms = self.out.dirname / self.out.stem+'-xfms.tgz'
+        log.info(f'Make {output_bval}')
+        bval_file.copy(output_bval)
 
-#         with TemporaryDirectory() as tmpdir, local.cwd(tmpdir):
-#             tmpdir = local.path(tmpdir)
+        log.info(f'Make {output_transforms_tar}')
+        local['tar']('cvzf', output_transforms_tar, transforms)
 
-#             dicePrefix = 'vol'
-
-#             logging.info('Dice the DWI')
-#             fslsplit[self.dwi] & FG
-
-#             logging.info('Extract the B0')
-#             check_call((' ').join([pjoin(FILEDIR,'bse.py'), '-i', self.dwi._path, '-o', 'b0.nii.gz']), shell= True)
-
-#             logging.info('Register each volume to the B0')
-#             vols = sorted(tmpdir // (dicePrefix + '*.nii.gz'))
-
-#             # use the following multi-processed loop
-#             pool= Pool(int(self.nproc))
-#             res= pool.map_async(_Register_vol, vols)
-#             volsRegistered= res.get()
-#             pool.close()
-#             pool.join()
-
-#             # or use the following for loop
-#             # volsRegistered = []
-#             # for vol in vols:
-#             #     volnii = vol.with_suffix('.nii.gz')
-#             #     ConvertBetweenFileFormats(vol, volnii, 'short')
-#             #     logging.info('Run FSL flirt affine registration')
-#             #     flirt('-interp' ,'sinc'
-#             #           ,'-sincwidth' ,'7'
-#             #           ,'-sincwindow' ,'blackman'
-#             #           ,'-in', volnii
-#             #           ,'-ref', 'b0.nii.gz'
-#             #           ,'-nosearch'
-#             #           ,'-o', volnii
-#             #           ,'-omat', volnii.with_suffix('.txt', depth=2)
-#             #           ,'-paddingsize', '1')
-#             #     volsRegistered.append(volnii)
+        if debug:
+            tmpdir.copy(output_debug)
 
 
-#             fslmerge('-t', 'EddyCorrect-DWI.nii.gz', volsRegistered)
-#             transforms = tmpdir.glob(dicePrefix+'*.txt')
-#             transforms.sort()
+def test_eddy_pnl(fsldir):
+    with local.tempdir() as tmpdir:
+        tmpdir = local.path('/tmp/tmp')
+        input_dwi = dtipipe.TEST_DATA / 'dwi.nii.gz'
+        test_output = tmpdir / f'dwi_eddy.nii.gz'
+        expected_output = dtipipe.TEST_DATA / f'dwi_eddy.nii.gz'
+        eddy_pnl(input_dwi, test_output, fsldir=fsldir)
+        assert filecmp.cmp(test_output, expected_output)
+        for suffix in ['.bval', '.bvec']:
+            assert filecmp.cmp(test_output.with_suffix(suffix, depth=2),
+                               expected_output.with_suffix(suffix, depth=2))
 
 
-#             logging.info('Extract the rotations and realign the gradients')
+class Cli(cli.Application):
 
-#             bvecs= read_bvecs(self.bvecFile._path)
-#             bvecs_new= bvecs.copy()
-#             for (i,t) in enumerate(transforms):
+    __doc__ = eddy_pnl.__doc__
 
-#                 logging.info('Apply ' + t)
-#                 tra = np.loadtxt(t)
+    debug = cli.Flag('-d', help='Debug, saves registrations to eddy-debug-<pid>')
+    dwi = cli.SwitchAttr('-i', cli.ExistingFile, help='DWI in nifti', mandatory= True)
+    output = cli.SwitchAttr('-o', help='Prefix for eddy corrected DWI', mandatory= True)
+    overwrite = cli.Flag('--force', default=False, help='Force overwrite')
+    nproc = cli.SwitchAttr(
+        ['-n', '--nproc'],
+        help='''number of threads to use, if other processes in your computer
+        becomes sluggish/you run into memory error, reduce --nproc''',
+        default=20)
+    fsldir = cli.SwitchAttr(['--fsldir'], default=None, help='root path of FSL', mandatory=False)
 
-#                 # removes the translation
-#                 aff = np.matrix(tra[0:3,0:3])
-
-#                 # computes the finite strain of aff to get the rotation
-#                 rot = aff*aff.T
-
-#                 # compute the square root of rot
-#                 [el, ev] = np.linalg.eig(rot)
-#                 eL = np.identity(3)*np.sqrt(el)
-#                 sq = ev*eL*ev.I
-
-#                 # finally the rotation is defined as
-#                 rot = sq.I*aff
-
-#                 bvecs_new[i] = np.dot(rot,bvecs[i]).tolist()[0]
-
-
-
-#             tar('cvzf', outxfms, transforms)
-
-#             # save modified bvecs
-#             write_bvecs(self.out._path+'.bvec', bvecs_new)
-
-#             # save EddyCorrect-DWI
-#             local.path('EddyCorrect-DWI.nii.gz').copy(self.out+'.nii.gz')
-
-#             # copy bvals
-#             self.bvalFile.copy(self.out._path+'.bval')
-
-#             if self.debug:
-#                 tmpdir.copy(pjoin(dirname(self.out),"eddy-debug-"+str(getpid())))
-
-
-# if __name__ == '__main__':
-#     App.run()
+    def main(self):
+        coloredlogs.install()
+        self.output = local.path(self.output)
+        if self.output.exists():
+            if self.overwrite:
+                self.output.delete()
+            else:
+                log.error(f"{self.output} exists, use '--force' to overwrite it")
+                sys.exit(1)
+        eddy_pnl(dwi=self.dwi, output=self.output, nproc=self.nproc, fsldir=self.fsldir)

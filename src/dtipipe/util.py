@@ -50,3 +50,31 @@ def compare_niftis(nifti_file1, nifti_file2):
         print((nifti2.header.items()))
         return False
     return True
+
+
+def read_bvecs(bvec_file, normalize=False):
+    with open(bvec_file, 'r') as f:
+        bvecs = [[float(num) for num in line.split()] for line in f.read().split('\n') if line]
+
+    # bvec_file can be 3xN or Nx3
+    # we want to return as Nx3
+    if len(bvecs) == 3:
+        bvecs = transpose(bvecs)
+
+    if normalize:
+        for i in range(len(bvecs)):
+            L_2 = np.linalg.norm(bvecs[i])
+            if L_2:
+                bvecs[i] /= L_2
+            else:
+                bvecs[i] = [0, 0, 0]
+    return bvecs
+
+
+def write_bvecs(bvecs, bvec_file):
+    with open(bvec_file, 'w') as f:
+        f.write(('\n').join((' ').join(str(i) for i in row) for row in bvecs))
+
+
+def transpose(bvecs):
+    return list(map(list, zip(*bvecs)))
