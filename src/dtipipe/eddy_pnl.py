@@ -1,13 +1,16 @@
 import sys
 import logging
+import filecmp
 # from os import getpid
 # from multiprocessing import Pool
 # from subprocess import check_call
+import pytest
 
 import numpy as np
 from plumbum import local, cli, FG
 
 import dtipipe
+from . import util
 
 # from conversion import read_bvecs, write_bvecs
 # from util import logfmt, TemporaryDirectory, pjoin, FILEDIR, N_PROC, dirname
@@ -16,26 +19,33 @@ log = logging.getLogger(__name__)
 
 
 def register(source_nii, target_nii, output, fsldir=None):
-    flirt_path = 'flirt'
     if fsldir:
-        flirt_path = fsldir / 'bin' / 'flirt'
-    flirt = local[flirt_path]
+        fsl_env = util.get_fsl_env(fsldir)
+    else:
+        fsl_env = {}
     log.info(f'Run FSL flirt affine registration: {source_nii} -> {target_nii}')
-    flirt('-interp', 'sinc',
-          '-sincwidth', '7',
-          '-sincwindow', 'blackman',
-          '-in',  source_nii,
-          '-ref', target_nii,
-          '-nosearch',
-          '-o', output,
-          '-omat', output.with_suffix('.txt', depth=2),
-          '-paddingsize', '1')
+    with local.env(**fsl_env):
+        local['flirt']('-interp', 'sinc',
+                       '-sincwidth', '7',
+                       '-sincwindow', 'blackman',
+                       '-in',  source_nii,
+                       '-ref', target_nii,
+                       '-nosearch',
+                       '-o', output,
+                       '-omat', output.with_suffix('.txt', depth=2),
+                       '-paddingsize', '1')
 
 
-def test_register():
+def test_register(fsldir):
     with local.tempdir() as tmpdir:
-        dwi = dtipipe.TEST_DATA / 'dwi.nii.gz'
-        dwi.copy(tmpdir)
+        tmpdir = local.path('/tmp/tmp')
+        dwi0 = dtipipe.TEST_DATA / 'dwi_split' / 'vol0000.nii.gz'
+        dwi10 = dtipipe.TEST_DATA / 'dwi_split' / 'vol0010.nii.gz'
+        expected_output = (dtipipe.TEST_DATA / 'dwi_10_in_0.nii.gz')
+        test_output = tmpdir / 'dwi_10_in_0.nii.gz'
+        register(dwi10, dwi0, test_output, fsldir=fsldir)
+        assert filecmp.cmp(expected_output, test_output)
+
 
 # class App(cli.Application):
 #     '''Eddy current correction.'''
