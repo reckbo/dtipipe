@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 
 def register(source_nii, target_nii, output, fsldir=None):
     log.info(f'Run FSL flirt affine registration: {source_nii} -> {target_nii}')
-    with local.env(**util.fsl_env(fsldir)):
+    with util.fsl_env(fsldir):
         local['flirt']('-interp', 'sinc',
                        '-sincwidth', '7',
                        '-sincwindow', 'blackman',
@@ -65,7 +65,7 @@ def eddy_pnl(dwi, output, nproc=20, fsldir=None, debug=False):
     output_transforms_tar = output[:-7] + '-xfms.tar.gz'
     output_debug = output.parent / f"eddy-debug-{getpid()}"
 
-    with local.tempdir() as tmpdir, local.cwd(tmpdir), local.env(**util.fsl_env(fsldir)):
+    with local.tempdir() as tmpdir, local.cwd(tmpdir), util.fsl_env(fsldir):
 
         fslsplit = local['fslsplit']
         fslmerge = local['fslmerge']

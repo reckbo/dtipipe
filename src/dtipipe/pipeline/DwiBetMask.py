@@ -28,5 +28,5 @@ class DwiBetMask(BaseTask):
                  fsldir=self.fsldir)
 
     def qc(self):
-        with local.env(**util.fsl_env(self.fsldir)):
+        with util.fsl_env(self.fsldir):
             local['fslview'](self.input()['nii.gz'], self.output())

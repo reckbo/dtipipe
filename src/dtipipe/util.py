@@ -13,7 +13,7 @@ def env_from_bash_file(source_file, init=None):
     return result
 
 
-def fsl_env(fsldir):
+def get_fsl_env(fsldir):
     if not fsldir:
         return {}
     fsldir = local.path(fsldir)
@@ -23,7 +23,12 @@ def fsl_env(fsldir):
     return env
 
 
-def freesurfer_env(freesurfer_home, fsldir):
+def fsl_env(fsldir):
+    env = get_fsl_env(fsldir)
+    return local.env(**env)
+
+
+def get_freesurfer_env(freesurfer_home, fsldir):
     fsldir = local.path(fsldir)
     freesurfer_home = local.path(freesurfer_home)
     init = f'FREESURFER_HOME={freesurfer_home} FSL_DIR={fsldir} '
@@ -31,6 +36,11 @@ def freesurfer_env(freesurfer_home, fsldir):
     env['PATH'] = local.path(fsldir / 'bin') + ':' + env['PATH']
     env['FREESURFER_HOME'] = freesurfer_home
     return env
+
+
+def freesurfer_env(freesurfer_home, fsldir):
+    env = get_freesurfer_env(freesurfer_home, fsldir)
+    return local.env(**env)
 
 
 def save_nifti(output_name, data, affine, hdr):

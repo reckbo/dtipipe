@@ -40,7 +40,7 @@ def bse(dwi, output=None, dwi_mask=None, b0_threshold=DEFAULT_B0_THRESHOLD, extr
     if len(b0_idx) == 0:
         raise Exception(f'No B0 image found. Check {bval_file}')
 
-    with local.env(**util.fsl_env(fsldir)):
+    with util.fsl_env(fsldir):
 
         fslroi = local['fslroi']
 
@@ -74,7 +74,7 @@ def bse(dwi, output=None, dwi_mask=None, b0_threshold=DEFAULT_B0_THRESHOLD, extr
 @pytest.mark.parametrize("dwi_mask", [None, TEST_DATA / 'dwi_mask.nii.gz'])
 def test_bse(extract_type, dwi_mask, fsldir):
     mask_suffix = '_masked' if dwi_mask else ''
-    with local.env(util.fsl_env(fsldir)), local.tempdir() as tmpdir:
+    with util.fsl_env(fsldir), local.tempdir() as tmpdir:
         expected_output = TEST_DATA / f'dwi_b0_{extract_type}{mask_suffix}.nii.gz'
         output = tmpdir / f'dwi_b0_{extract_type}{mask_suffix}.nii.gz'
         bse(dwi=TEST_DATA / 'dwi.nii.gz',

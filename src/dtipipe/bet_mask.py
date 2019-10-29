@@ -26,7 +26,7 @@ def bet_mask(input_file, output_file, bet_threshold=DEFAULT_BET_THRESHOLD, fsldi
     input_file = local.path(input_file)
     output_file = local.path(output_file)
 
-    with local.env(**util.fsl_env(fsldir)), local.tempdir() as tmpdir:
+    with util.fsl_env(fsldir), local.tempdir() as tmpdir:
         bet = local['bet']
         tmpdir = local.path('/tmp/bet')
 
