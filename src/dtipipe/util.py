@@ -43,6 +43,19 @@ def freesurfer_env(freesurfer_home, fsldir):
     return local.env(**env)
 
 
+def get_ants_env(antsdir):
+    if not antsdir:
+        return {}
+    ants_dir = local.path(antsdir) / 'bin'
+    path = ':'.join([ants_dir] + local.env.path)
+    return dict(PATH=path, ANTSPATH=ants_dir)
+
+
+def ants_env(ants_dir):
+    env = get_ants_env(ants_dir)
+    return local.env(**env)
+
+
 def save_nifti(output_name, data, affine, hdr):
     if data.dtype.name == 'uint8':
         hdr.set_data_dtype('uint8')
