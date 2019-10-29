@@ -40,32 +40,35 @@ def bse(dwi, output=None, dwi_mask=None, b0_threshold=DEFAULT_B0_THRESHOLD, extr
     if len(b0_idx) == 0:
         raise Exception(f'No B0 image found. Check {bval_file}')
 
-    with util.fsl_env(fsldir):
+    with util.fsl_env(fsldir), local.tempdir() as tmpdir:
 
+        tmp_output = tmpdir / 'bse.nii.gz'
         fslroi = local['fslroi']
 
         if extract_type == 'minimum':
             log.info('Extract minimum B0')
-            fslroi(dwi, output, np.argsort(bvals)[0], 1)
+            fslroi(dwi, tmp_output, np.argsort(bvals)[0], 1)
 
         elif extract_type == 'average':
             log.info('Extract average B0')
             img = nib.load(str(dwi))
             hdr = img.header
             avg_bse = np.mean(img.get_data()[:, :, :, b0_idx], axis=3)
-            util.save_nifti(output, avg_bse, img.affine, hdr)
+            util.save_nifti(tmp_output, avg_bse, img.affine, hdr)
 
         elif extract_type == 'all':
             log.info('Extract all B0\'s')
-            fslroi(dwi, output, b0_idx, len(b0_idx))  # FIXME: valid for contiguous b0's only
+            fslroi(dwi, tmp_output, b0_idx, len(b0_idx))  # BUG valid for contiguous b0's only?
 
         else:  # default is 'first'
             log.info('Extract first B0')
-            fslroi(dwi, output, b0_idx, 1)
+            fslroi(dwi, tmp_output, b0_idx, 1)
 
         if dwi_mask:
             log.info(f'Mask {output} with {dwi_mask}')
-            local['fslmaths'](output, '-mul', dwi_mask, output)
+            local['fslmaths'](tmp_output, '-mul', dwi_mask, output)
+        else:
+            tmp_output.copy(output)
 
     log.info(f'Made {output}')
 
