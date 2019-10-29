@@ -9,9 +9,9 @@ import pytest
 import numpy as np
 from plumbum import local, cli
 
-import dtipipe
-from . import util
 from . import bse
+from . import util
+from . import TEST_DATA
 
 
 log = logging.getLogger(__name__)
@@ -35,9 +35,9 @@ def register(source_nii, target_nii, output, fsldir=None):
 def test_register(fsldir):
     with local.tempdir() as tmpdir:
         tmpdir = local.path('/tmp/tmp')
-        dwi0 = dtipipe.TEST_DATA / 'dwi_split' / 'vol0000.nii.gz'
-        dwi10 = dtipipe.TEST_DATA / 'dwi_split' / 'vol0010.nii.gz'
-        expected_output = (dtipipe.TEST_DATA / 'dwi_10_in_0.nii.gz')
+        dwi0 = TEST_DATA / 'dwi_split' / 'vol0000.nii.gz'
+        dwi10 = TEST_DATA / 'dwi_split' / 'vol0010.nii.gz'
+        expected_output = TEST_DATA / 'dwi_10_in_0.nii.gz'
         test_output = tmpdir / 'dwi_10_in_0.nii.gz'
         register(dwi10, dwi0, test_output, fsldir=fsldir)
         assert filecmp.cmp(expected_output, test_output)
@@ -121,12 +121,12 @@ def eddy_pnl(dwi, output, nproc=20, fsldir=None, debug=False):
             tmpdir.copy(output_debug)
 
 
+@pytest.mark.slow
 def test_eddy_pnl(fsldir):
     with local.tempdir() as tmpdir:
-        tmpdir = local.path('/tmp/tmp')
-        input_dwi = dtipipe.TEST_DATA / 'dwi.nii.gz'
+        input_dwi = TEST_DATA / 'dwi.nii.gz'
         test_output = tmpdir / f'dwi_eddy.nii.gz'
-        expected_output = dtipipe.TEST_DATA / f'dwi_eddy.nii.gz'
+        expected_output = TEST_DATA / f'dwi_eddy.nii.gz'
         eddy_pnl(input_dwi, test_output, fsldir=fsldir)
         assert filecmp.cmp(test_output, expected_output)
         for suffix in ['.bval', '.bvec']:

@@ -1,5 +1,5 @@
 import luigi.util
-from luigi import Parameter, OptionalParameter
+from luigi import OptionalParameter, IntParameter
 from plumbum import local
 
 from .BaseTask import BaseTask
@@ -12,7 +12,7 @@ from ..eddy_pnl import eddy_pnl
 class DwiEddy(BaseTask):
 
     fsldir = OptionalParameter(default=None)
-    nproc = Parameter(significant=False, default=5)
+    nproc = IntParameter(significant=False, default=5)
 
     def output(self):
         return {suffix: local.path(self.output_session_dir,

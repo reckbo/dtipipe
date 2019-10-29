@@ -8,13 +8,15 @@ import nibabel as nib
 import coloredlogs
 
 from . import util
-import dtipipe
+from . import TEST_DATA
 
 
 log = logging.getLogger(__name__)
 
+DEFAULT_B0_THRESHOLD = 45.0
 
-def bse(dwi, output=None, b0_threshold=45, extract_type=None, fsldir=None):
+
+def bse(dwi, output=None, b0_threshold=DEFAULT_B0_THRESHOLD, extract_type=None, fsldir=None):
     """
     Extracts the baseline (B0) from a nifti DWI.
 
@@ -30,11 +32,11 @@ def bse(dwi, output=None, b0_threshold=45, extract_type=None, fsldir=None):
 
     bval_file = local.path(dwi.with_suffix('.bval', depth=2))
     bvals = [float(i) for i in bval_file.read().strip().split()]
-    idx = np.flatnonzero(np.array(bvals) < b0_threshold)
+    b0_idx = np.flatnonzero(np.array(bvals) < b0_threshold)
 
-    log.debug(f'Found B0\'s at indices: {idx}')
+    log.debug(f'Found B0\'s at indices: {b0_idx}')
 
-    if len(idx) == 0:
+    if len(b0_idx) == 0:
         raise Exception(f'No B0 image found. Check {bval_file}')
 
     with local.env(**util.fsl_env(fsldir)):
@@ -49,16 +51,16 @@ def bse(dwi, output=None, b0_threshold=45, extract_type=None, fsldir=None):
             log.info('Extract average B0')
             img = nib.load(str(dwi))
             hdr = img.header
-            avg_bse = np.mean(img.get_data()[:, :, :, idx], axis=3)
+            avg_bse = np.mean(img.get_data()[:, :, :, b0_idx], axis=3)
             util.save_nifti(output, avg_bse, img.affine, hdr)
 
         elif extract_type == 'all':
             log.info('Extract all B0\'s')
-            fslroi(dwi, output, idx, len(idx))  # FIXME: valid for contiguous b0's only
+            fslroi(dwi, output, b0_idx, len(b0_idx))  # FIXME: valid for contiguous b0's only
 
         else:  # default is 'first'
             log.info('Extract first B0')
-            fslroi(dwi, output, idx, 1)
+            fslroi(dwi, output, b0_idx, 1)
 
     log.info(f'Made {output}')
 
@@ -67,11 +69,9 @@ def bse(dwi, output=None, b0_threshold=45, extract_type=None, fsldir=None):
 def test_bse(extract_type, fsldir):
     with local.env(util.fsl_env(fsldir)):
         with local.tempdir() as tmpdir:
-            tmpdir = local.path('/tmp/tmp')
-            expected_output = dtipipe.TEST_DATA / f'dwi_b0_{extract_type}.nii.gz'
+            expected_output = TEST_DATA / f'dwi_b0_{extract_type}.nii.gz'
             test_output = tmpdir / f'dwi_b0_{extract_type}.nii.gz'
-            bse(dtipipe.TEST_DATA / 'dwi.nii.gz', test_output, extract_type=extract_type,
-                fsldir=fsldir)
+            bse(TEST_DATA / 'dwi.nii.gz', test_output, extract_type=extract_type, fsldir=fsldir)
             if extract_type == 'average':
                 assert util.compare_niftis(test_output, expected_output)
             else:
@@ -102,7 +102,7 @@ class Cli(cli.Application):
         ['-t', '--threshold'],
         help='threshold for b0',
         mandatory=False,
-        default=45.0)
+        default=DEFAULT_B0_THRESHOLD)
 
     extract_type = cli.SwitchAttr(
         ['-e', '--extract_type'],
