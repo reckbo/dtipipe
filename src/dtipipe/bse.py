@@ -82,42 +82,47 @@ class Cli(cli.Application):
 
     __doc__ = bse.__doc__
 
+    ALLOW_ABBREV = True
+
     dwi = cli.SwitchAttr(
         ['-i', '--input'],
-        cli.ExistingFile,
-        help='DWI in nifti format',
-        mandatory=True)
-
-    bval_file = cli.SwitchAttr(
-        '--bvals',
-        cli.ExistingFile,
-        help='bval file, default: dwiPrefix.bval')
+        argtype=cli.ExistingFile,
+        mandatory=True,
+        help='DWI in nifti format')
 
     output = cli.SwitchAttr(
         ['-o', '--output'],
-        help='extracted baseline image (default: inPrefix_bse.nii.gz)',
-        mandatory=False)
+        argtype=cli.NonexistentPath,
+        help='Extracted baseline image')
 
     b0_threshold = cli.SwitchAttr(
         ['-t', '--threshold'],
-        help='threshold for b0',
-        mandatory=False,
-        default=DEFAULT_B0_THRESHOLD)
+        argtype=float,
+        default=DEFAULT_B0_THRESHOLD,
+        help='threshold for b0')
 
     extract_type = cli.SwitchAttr(
         ['-e', '--extract_type'],
-        help=('extract all B0\'s ("all"), average of B0\'s ("average"), minimum B0 ("minimum"), '
-              'or first B0 ("first")'),
+        argtype=cli.Set("all", "average", "minimum", "first", case_sensitive=False),
+        help=('Extraction type: all B0\'s ("all"), average of B0\'s ("average"), '
+              'minimum B0 ("minimum") or first B0 ("first")'),
         default="first",
         mandatory=False)
 
     fsldir = cli.SwitchAttr(
         ['--fsldir'],
-        help='root path of FSL',
-        mandatory=False)
+        argtype=cli.ExistingDirectory,
+        help='Root path of FSL (FSL_DIR)')
+
+    log_level = cli.SwitchAttr(
+        ['--log-level'],
+        argtype=cli.Set("CRITICAL", "ERROR", "WARNING",
+                        "INFO", "DEBUG", "NOTSET", case_sensitive=False),
+        default='INFO',
+        help='Python log level')
 
     def main(self):
-        coloredlogs.install()
+        coloredlogs.install(self.log_level)
         bse(dwi=self.dwi,
             output=self.output,
             b0_threshold=self.b0_threshold,

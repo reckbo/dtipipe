@@ -17,7 +17,7 @@ def fsl_env(fsldir):
         return {}
     new_path = [fsldir + '/bin'] + local.env.path
     fsl_env = source_shell_file(fsldir + '/etc/fslconf/fsl.sh')
-    return dict(**fsl_env, PATH=':'.join(new_path))
+    return dict(**fsl_env, FSLDIR=fsldir, PATH=':'.join(new_path))
 
 
 def save_nifti(output_name, data, affine, hdr):

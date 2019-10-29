@@ -138,16 +138,48 @@ class Cli(cli.Application):
 
     __doc__ = eddy_pnl.__doc__
 
-    debug = cli.Flag('-d', help='Debug, saves registrations to eddy-debug-<pid>')
-    dwi = cli.SwitchAttr('-i', cli.ExistingFile, help='DWI in nifti', mandatory= True)
-    output = cli.SwitchAttr('-o', help='Prefix for eddy corrected DWI', mandatory= True)
-    overwrite = cli.Flag('--force', default=False, help='Force overwrite')
+    ALLOW_ABBREV = True
+
+    dwi = cli.SwitchAttr(
+        '-i',
+        argtype=cli.ExistingFile,
+        mandatory=True,
+        help='DWI in nifti')
+
+    output = cli.SwitchAttr(
+        '-o',
+        argtype=cli.NonexistentPath,
+        mandatory=True,
+        help='Prefix for eddy corrected DWI')
+
+    overwrite = cli.Flag(
+        '--force',
+        default=False,
+        help='Force overwrite')
+
     nproc = cli.SwitchAttr(
         ['-n', '--nproc'],
-        help='''number of threads to use, if other processes in your computer
-        becomes sluggish/you run into memory error, reduce --nproc''',
-        default=20)
-    fsldir = cli.SwitchAttr(['--fsldir'], default=None, help='root path of FSL', mandatory=False)
+        argtype=int,
+        default=5,
+        help=('number of threads to use, if other processes in your computer '
+              'becomes sluggish/you run into memory error, reduce --nproc'))
+
+    debug = cli.Flag(
+        ['-d', '--debug'],
+        default=False,
+        help='saves registrations to eddy-debug-<pid>')
+
+    fsldir = cli.SwitchAttr(
+        ['--fsldir'],
+        argtype=cli.ExistingDirectory,
+        help='Root path of FSL (FSL_DIR)')
+
+    log_level = cli.SwitchAttr(
+        ['--log-level'],
+        argtype=cli.Set("CRITICAL", "ERROR", "WARNING",
+                        "INFO", "DEBUG", "NOTSET", case_sensitive=False),
+        default='INFO',
+        help='Python log level')
 
     def main(self):
         coloredlogs.install()
@@ -158,4 +190,7 @@ class Cli(cli.Application):
             else:
                 log.error(f"{self.output} exists, use '--force' to overwrite it")
                 sys.exit(1)
-        eddy_pnl(dwi=self.dwi, output=self.output, nproc=self.nproc, fsldir=self.fsldir)
+        eddy_pnl(dwi=self.dwi,
+                 output=self.output,
+                 nproc=self.nproc,
+                 fsldir=self.fsldir)

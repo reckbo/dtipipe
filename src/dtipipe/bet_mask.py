@@ -28,20 +28,23 @@ def bet_mask(input_file, output_file, bet_threshold=DEFAULT_BET_THRESHOLD, fsldi
 
     with local.env(**util.fsl_env(fsldir)), local.tempdir() as tmpdir:
         bet = local['bet']
+        tmpdir = local.path('/tmp/bet')
 
         if len(shape) == 3:
             log.info(f'Make BSL bet mask for 3D input image: {input_file}')
-            bet(input_file, 'mask', '-m', '-n', '-f', bet_threshold)
+            bet(input_file, tmpdir / 'img', '-m', '-n', '-f', bet_threshold)
+            log.debug(f'Output files: {tmpdir // "*"}')
             output_file.parent.mkdir()
-            (tmpdir / 'mask_mask.nii.gz').copy(output_file)
+            (tmpdir / 'img_mask.nii.gz').copy(output_file)
 
         elif len(shape) == 4:
             log.info(f'Make BSL bet mask for input DWI: {input_file}')
             tmp_bse = tmpdir / 'bse.nii.gz'
             bse.bse(input_file, tmp_bse, extract_type='first')
-            bet(tmp_bse, tmpdir / 'mask', '-m', '-n', '-f', bet_threshold)
+            bet(tmp_bse, tmpdir / 'bse', '-m', '-n', '-f', bet_threshold)
+            log.debug(f'Output files: {tmpdir // "*"}')
             local.path(output_file).parent.mkdir()
-            (tmpdir / 'mask_mask.nii.gz').copy(output_file)
+            (tmpdir / 'bse_mask.nii.gz').copy(output_file)
 
         else:
             raise Exception(f'Expected a 3D or 4D input image, got: {shape}')
@@ -49,7 +52,6 @@ def bet_mask(input_file, output_file, bet_threshold=DEFAULT_BET_THRESHOLD, fsldi
 
 def test_bet_mask(fsldir):
     with local.tempdir() as tmpdir:
-        tmpdir = local.path('/tmp/tmp')  # FIXME
         input_file = TEST_DATA / 'dwi.nii.gz'
         output_file = tmpdir / f'dwi_mask.nii.gz'
         expected_output_file = TEST_DATA / f'dwi_mask.nii.gz'
@@ -60,13 +62,37 @@ def test_bet_mask(fsldir):
 class Cli(cli.Application):
 
     input_file = cli.SwitchAttr(
-        ['-i', '--input'], cli.ExistingFile, help='input 3D/4D nifti image', mandatory=True)
+        ['-i', '--input'],
+        argtype=cli.ExistingFile,
+        mandatory=True,
+        help='input 3D/4D nifti image')
 
-    output_file = cli.SwitchAttr(['-o', '--output'], help='path of output mask', mandatory=True)
+    output_file = cli.SwitchAttr(
+        ['-o', '--output'],
+        mandatory=True,
+        help='path of output mask')
 
     bet_threshold = cli.SwitchAttr(
-        '-f', help='threshold for fsl bet mask', mandatory=False, default=DEFAULT_BET_THRESHOLD)
+        '-f',
+        argtype=float,
+        default=DEFAULT_BET_THRESHOLD,
+        help='threshold for fsl bet mask')
+
+    fsldir = cli.SwitchAttr(
+        ['--fsldir'],
+        argtype=cli.ExistingDirectory,
+        help='Root path of FSL (FSL_DIR)')
+
+    log_level = cli.SwitchAttr(
+        ['--log-level'],
+        argtype=cli.Set("CRITICAL", "ERROR", "WARNING",
+                        "INFO", "DEBUG", "NOTSET", case_sensitive=False),
+        default='INFO',
+        help='Python log level')
 
     def main(self):
-        coloredlogs.install()
-        bet_mask(self.input_file, self.output_file, bet_threshold=self.bet_threshold)
+        coloredlogs.install(level=self.log_level)
+        bet_mask(self.input_file,
+                 self.output_file,
+                 bet_threshold=self.bet_threshold,
+                 fsldir=self.fsldir)

@@ -4,7 +4,6 @@ from plumbum import local
 
 from .BaseTask import BaseTask
 from .DwiNifti import DwiNifti
-
 from ..eddy_pnl import eddy_pnl
 
 
@@ -12,7 +11,7 @@ from ..eddy_pnl import eddy_pnl
 class DwiEddy(BaseTask):
 
     fsldir = OptionalParameter(default=None)
-    nproc = IntParameter(significant=False, default=5)
+    eddy_nproc = IntParameter(significant=False, default=5)
 
     def output(self):
         return {suffix: local.path(self.output_session_dir,
@@ -22,5 +21,5 @@ class DwiEddy(BaseTask):
     def run(self):
         eddy_pnl(dwi=self.input()['nii.gz'],
                  output=self.output()['nii.gz'],
-                 nproc=self.nproc,
+                 nproc=self.eddy_nproc,
                  fsldir=self.fsldir)
