@@ -12,23 +12,20 @@ from . import TEST_DATA
 log = logging.getLogger(__name__)
 
 REPO_DIR = local.path(__file__).parent.parent.parent
-ANTS_NUM_PROC = 5
+NUM_PROC_ANTS = 5
 
 
-def register_wmparc_to_dwi(brain, wmparc, masked_b0, output_wmparc, nproc=ANTS_NUM_PROC,
-                           antsdir=None):
-    with util.ants_env(antsdir), local.tempdir() as tmpdir:
-        pre = tmpdir / 'pre'
-        affine = pre + '0GenericAffine.mat'
-        warp = pre + '1Warp.nii.gz'
+def register_wmparc_to_dwi(brain, wmparc, masked_b0, output_wmparc, num_proc=NUM_PROC_ANTS,
+                           antspath=None):
+    with util.ants_env(antspath), local.tempdir() as tmpdir:
+        output_prefix = tmpdir / 'pre'
+        affine = output_prefix + '0GenericAffine.mat'
+        warp = output_prefix + '1Warp.nii.gz'
         log.info('Compute warp from brain to baseline')
         r = local[REPO_DIR / 'scripts' / 'antsRegistrationSyNMI.sh'].run(['-m', brain,
                                                                           '-f', masked_b0,
-                                                                          '-o', pre,
-                                                                          '-n', nproc])
-        # cmd = map(str, [REPO_DIR / 'scripts' / 'antsRegistrationSyNMI.sh',
-        #                 '-m', brain, '-f', masked_b0, '-o', pre, '-n', nproc])
-        # r = local['bash'].run(['-c', ' '.join(cmd)])
+                                                                          '-o', output_prefix,
+                                                                          '-n', num_proc])
         log.debug(f'antsRegistrationSyNMI.sh: {r}')
         log.debug(f'Output files in {tmpdir}: {tmpdir // "*"}')
         log.info('Apply warp to wmparc to create a resampled version in DWI space')
@@ -41,7 +38,7 @@ def register_wmparc_to_dwi(brain, wmparc, masked_b0, output_wmparc, nproc=ANTS_N
     log.info('Made {output_wmparc}')
 
 
-def fs2dwi(freesurfer_recon_dir, dwi_file, dwi_mask_file, freesurfer_home, fsldir, antsdir):
+def fs2dwi(freesurfer_recon_dir, dwi_file, dwi_mask_file, freesurfer_home, fsldir, antspath):
 
     freesurfer_recon_dir = local.path(freesurfer_recon_dir)
     brain_mgz = freesurfer_recon_dir / 'mri' / 'brain.mgz'
@@ -82,9 +79,9 @@ def fs2dwi(freesurfer_recon_dir, dwi_file, dwi_mask_file, freesurfer_home, fsldi
         register_wmparc_to_dwi(brain=brain_nii,
                                wmparc=wmparc_nii,
                                masked_b0=masked_b0,
-                               nproc=ANTS_NUM_PROC,
+                               num_proc=NUM_PROC_ANTS,
                                output_wmparc=wmparc_in_dwi,
-                               antsdir=antsdir)
+                               antspath=antspath)
 
 #         if (dwi_res!=brain_res).any():
 #             print('DWI resolution is different from FreeSurfer brain resolution')
@@ -114,7 +111,7 @@ def fs2dwi(freesurfer_recon_dir, dwi_file, dwi_mask_file, freesurfer_home, fsldi
 #     print('See output files in ', self.parent.out._path)
 
 
-def test_fs2dwi(freesurfer_home, fsldir, antsdir):
+def test_fs2dwi(freesurfer_home, fsldir, antspath):
     freesurfer_recon_dir = TEST_DATA / 'edit.FS6_004_006_bv'
     dwi_file = TEST_DATA / 'dwi_eddy.nii.gz'
     dwi_mask_file = TEST_DATA / 'dwi_mask.nii.gz'
@@ -123,7 +120,7 @@ def test_fs2dwi(freesurfer_home, fsldir, antsdir):
            dwi_mask_file=dwi_mask_file,
            freesurfer_home=freesurfer_home,
            fsldir=fsldir,
-           antsdir=antsdir)
+           antspath=antspath)
 
 
 # # class FsToDwi(cli.Application):

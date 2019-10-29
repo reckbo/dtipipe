@@ -9,7 +9,7 @@ def pytest_addoption(parser):
         "--fshome", action="store", default=None, help="Path to root FreeSurfer installation"
     )
     parser.addoption(
-        "--antsdir", action="store", default=None, help="Path to root ANTs installation"
+        "--antspath", action="store", default=None, help="Path to root ANTs bin/ directory"
     )
 
 
@@ -24,5 +24,5 @@ def freesurfer_home(request):
 
 
 @pytest.fixture
-def antsdir(request):
-    return request.config.getoption("--antsdir")
+def antspath(request):
+    return request.config.getoption("--antspath")

@@ -14,6 +14,8 @@ from . import util
 from . import TEST_DATA
 
 
+NUM_PROC_EDDY = 5
+
 log = logging.getLogger(__name__)
 
 
@@ -51,7 +53,7 @@ def _multiprocessing_register(source_nii):
     return output
 
 
-def eddy_pnl(dwi, output, nproc=20, fsldir=None, debug=False):
+def eddy_pnl(dwi, output, num_proc=20, fsldir=None, debug=False):
     """
     Eddy current correction.
     """
@@ -78,7 +80,7 @@ def eddy_pnl(dwi, output, nproc=20, fsldir=None, debug=False):
         log.info('Extract the B0')
         bse.bse(dwi_file, 'b0.nii.gz')
 
-        pool = Pool(int(nproc))
+        pool = Pool(int(num_proc))
         res = pool.map_async(_multiprocessing_register, vols)
         registered_vols = res.get()
         pool.close()
@@ -157,10 +159,10 @@ class Cli(cli.Application):
         default=False,
         help='Force overwrite')
 
-    nproc = cli.SwitchAttr(
+    num_proc = cli.SwitchAttr(
         ['-n', '--nproc'],
         argtype=int,
-        default=5,
+        default=NUM_PROC_EDDY,
         help=('number of threads to use, if other processes in your computer '
               'becomes sluggish/you run into memory error, reduce --nproc'))
 
@@ -192,5 +194,5 @@ class Cli(cli.Application):
                 sys.exit(1)
         eddy_pnl(dwi=self.dwi,
                  output=self.output,
-                 nproc=self.nproc,
+                 num_proc=self.nproc,
                  fsldir=self.fsldir)

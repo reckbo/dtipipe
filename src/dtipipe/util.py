@@ -43,12 +43,12 @@ def freesurfer_env(freesurfer_home, fsldir):
     return local.env(**env)
 
 
-def get_ants_env(antsdir):
-    if not antsdir:
+def get_ants_env(antspath):
+    if not antspath:
         return {}
-    ants_dir = local.path(antsdir) / 'bin'
-    path = ':'.join([ants_dir] + local.env.path)
-    return dict(PATH=path, ANTSPATH=ants_dir)
+    antspath = local.path(antspath)
+    path = ':'.join([antspath] + local.env.path)
+    return dict(PATH=path, ANTSPATH=antspath)
 
 
 def ants_env(ants_dir):
