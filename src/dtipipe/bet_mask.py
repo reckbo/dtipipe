@@ -36,7 +36,6 @@ def bet_mask(input_file, output_file, bet_threshold=DEFAULT_BET_THRESHOLD, fsldi
             log.debug(f'Output files: {tmpdir // "*"}')
             output_file.parent.mkdir()
             (tmpdir / 'img_mask.nii.gz').copy(output_file)
-
         elif len(shape) == 4:
             log.info(f'Make BSL bet mask for input DWI: {input_file}')
             tmp_bse = tmpdir / 'bse.nii.gz'
@@ -45,9 +44,10 @@ def bet_mask(input_file, output_file, bet_threshold=DEFAULT_BET_THRESHOLD, fsldi
             log.debug(f'Output files: {tmpdir // "*"}')
             local.path(output_file).parent.mkdir()
             (tmpdir / 'bse_mask.nii.gz').copy(output_file)
-
         else:
             raise Exception(f'Expected a 3D or 4D input image, got: {shape}')
+
+        log.info(f'Made {output_file}')
 
 
 def test_bet_mask(fsldir):

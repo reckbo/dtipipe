@@ -3,8 +3,9 @@ import nibabel as nib
 from plumbum import local
 
 
-def source_shell_file(source_file):
-    lines = local['env']('-i', 'bash', '-c', f"source {source_file} && env").strip().split('\n')
+def env_from_bash_file(source_file, init=None):
+    init = '' if not init else init
+    lines = local['env']('-i', 'bash', '-c', f"{init} source {source_file} && env").strip().split('\n')
     result = {}
     for line in lines:
         var, _, val = line.partition('=')
@@ -15,9 +16,21 @@ def source_shell_file(source_file):
 def fsl_env(fsldir):
     if not fsldir:
         return {}
-    new_path = [fsldir + '/bin'] + local.env.path
-    fsl_env = source_shell_file(fsldir + '/etc/fslconf/fsl.sh')
-    return dict(**fsl_env, FSLDIR=fsldir, PATH=':'.join(new_path))
+    fsldir = local.path(fsldir)
+    env = env_from_bash_file(fsldir / 'etc' / 'fslconf' / 'fsl.sh')
+    env['PATH'] = ':'.join([fsldir / 'bin'] + local.env.path)
+    env['FSLDIR'] = fsldir
+    return env
+
+
+def freesurfer_env(freesurfer_home, fsldir):
+    fsldir = local.path(fsldir)
+    freesurfer_home = local.path(freesurfer_home)
+    init = f'FREESURFER_HOME={freesurfer_home} FSL_DIR={fsldir} '
+    env = env_from_bash_file(freesurfer_home / 'SetUpFreeSurfer.sh', init=init)
+    env['PATH'] = local.path(fsldir / 'bin') + ':' + env['PATH']
+    env['FREESURFER_HOME'] = freesurfer_home
+    return env
 
 
 def save_nifti(output_name, data, affine, hdr):
