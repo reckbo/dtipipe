@@ -6,6 +6,7 @@ from .BaseTask import BaseTask
 from .DwiEddy import DwiEddy
 
 from ..bet_mask import bet_mask
+from .. import util
 
 DWI_BET_THRESHOLD = 0.1
 
@@ -25,3 +26,7 @@ class DwiBetMask(BaseTask):
                  output_file=self.output(),
                  bet_threshold=self.dwi_bet_mask_threshold,
                  fsldir=self.fsldir)
+
+    def qc(self):
+        with local.env(**util.fsl_env(self.fsldir)):
+            local['fslview'](self.input()['nii.gz'], self.output())
