@@ -16,7 +16,8 @@ log = logging.getLogger(__name__)
 DEFAULT_B0_THRESHOLD = 45.0
 
 
-def bse(dwi, output=None, b0_threshold=DEFAULT_B0_THRESHOLD, extract_type=None, fsldir=None):
+def bse(dwi, output=None, dwi_mask=None, b0_threshold=DEFAULT_B0_THRESHOLD, extract_type=None,
+        fsldir=None):
     """
     Extracts the baseline (B0) from a nifti DWI.
 
@@ -62,20 +63,28 @@ def bse(dwi, output=None, b0_threshold=DEFAULT_B0_THRESHOLD, extract_type=None, 
             log.info('Extract first B0')
             fslroi(dwi, output, b0_idx, 1)
 
+        if dwi_mask:
+            log.info(f'Mask {output} with {dwi_mask}')
+            local['fslmaths'](output, '-mul', dwi_mask, output)
+
     log.info(f'Made {output}')
 
 
 @pytest.mark.parametrize("extract_type", ['minimum', 'average', 'all', 'first'])
-def test_bse(extract_type, fsldir):
-    with local.env(util.fsl_env(fsldir)):
-        with local.tempdir() as tmpdir:
-            expected_output = TEST_DATA / f'dwi_b0_{extract_type}.nii.gz'
-            test_output = tmpdir / f'dwi_b0_{extract_type}.nii.gz'
-            bse(TEST_DATA / 'dwi.nii.gz', test_output, extract_type=extract_type, fsldir=fsldir)
-            if extract_type == 'average':
-                assert util.compare_niftis(test_output, expected_output)
-            else:
-                assert filecmp.cmp(test_output, expected_output)
+@pytest.mark.parametrize("dwi_mask", [None, TEST_DATA / 'dwi_mask.nii.gz'])
+def test_bse(extract_type, dwi_mask, fsldir):
+    mask_suffix = '_masked' if dwi_mask else ''
+    with local.env(util.fsl_env(fsldir)), local.tempdir() as tmpdir:
+        expected_output = TEST_DATA / f'dwi_b0_{extract_type}{mask_suffix}.nii.gz'
+        output = tmpdir / f'dwi_b0_{extract_type}{mask_suffix}.nii.gz'
+        bse(dwi=TEST_DATA / 'dwi.nii.gz',
+            output=output,
+            dwi_mask=dwi_mask,
+            extract_type=extract_type, fsldir=fsldir)
+        if extract_type == 'average':
+            assert util.compare_niftis(output, expected_output)
+        else:
+            assert filecmp.cmp(output, expected_output)
 
 
 class Cli(cli.Application):
