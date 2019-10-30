@@ -2,19 +2,16 @@ import luigi.util
 from luigi import OptionalParameter, IntParameter
 from plumbum import local
 
+from dtipipe import eddy_pnl
 from .BaseTask import BaseTask
 from .DwiNifti import DwiNifti
-from ..eddy_pnl import eddy_pnl
-
-
-NUM_PROC_EDDY = 5
 
 
 @luigi.util.requires(DwiNifti)
 class DwiEddy(BaseTask):
 
     fsldir = OptionalParameter(default=None)
-    num_proc_eddy = IntParameter(significant=False, default=NUM_PROC_EDDY)
+    num_proc_eddy = IntParameter(significant=False)
 
     def output(self):
         return {suffix: local.path(self.output_session_dir,

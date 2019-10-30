@@ -11,7 +11,6 @@ class DwiNifti(BaseTask):
 
     output_session_dir = Parameter()
     output_basename = Parameter()
-
     dcm2niix_bin = Parameter(default='dcm2niix')
 
     def output(self):

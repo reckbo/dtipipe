@@ -1,6 +1,7 @@
 import logging
 from timeit import default_timer as timer
 
+import pytest
 import coloredlogs
 from plumbum import local, cli
 
@@ -53,11 +54,12 @@ def apply_antsRegistrationSyNMI(moving_image, fixed_image, output, moving_image_
     log.info(f'Made "{output}"')
 
 
+@pytest.mark.slow
 def test_apply_antsRegistrationSyNMI(antspath, num_proc_ants):
-    brain = TEST_DATA / 'brain.nii.gz'
-    wmparc = TEST_DATA / 'wmparc.nii.gz'
+    brain = TEST_DATA / 'fs2dwi' / 'brain.nii.gz'
+    wmparc = TEST_DATA / 'fs2dwi' / 'wmparc.nii.gz'
     masked_b0 = TEST_DATA / 'dwi_b0_first_masked.nii.gz'
-    expected_output = TEST_DATA / 'wmparc_in_dwi.nii.gz'
+    expected_output = TEST_DATA / 'fs2dwi' / 'wmparc_in_dwi.nii.gz'
     with local.tempdir() as tmpdir:
         output = tmpdir / 'wmparc_in_dwi.nii.gz'
         apply_antsRegistrationSyNMI(moving_image=brain,

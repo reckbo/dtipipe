@@ -1,3 +1,4 @@
+import pandas as pd
 import numpy as np
 import nibabel as nib
 from plumbum import local
@@ -5,7 +6,8 @@ from plumbum import local
 
 def env_from_bash_file(source_file, init=None):
     init = '' if not init else init
-    lines = local['env']('-i', 'bash', '-c', f"{init} source {source_file} && env").strip().split('\n')
+    lines = local['env']('-i', 'bash', '-c', f"{init} source {source_file} && env").strip() \
+                                                                                   .split('\n')
     result = {}
     for line in lines:
         var, _, val = line.partition('=')
@@ -114,3 +116,19 @@ def write_bvecs(bvecs, bvec_file):
 
 def transpose(bvecs):
     return list(map(list, zip(*bvecs)))
+
+
+def read_freesurfer_stats_header(stats_file):
+    header = None
+    for line in open(stats_file, 'r'):
+        if line.startswith('# ColHeaders'):
+            header = line.split()[2:]
+            break
+    return header
+
+
+def read_freesurfer_stats(stats_file):
+    header = read_freesurfer_stats_header(stats_file)
+    if not header:
+        raise Exception(f'Failed to find header in stats file: {stats_file}')
+    return pd.read_csv(stats_file, names=header, comment='#', delim_whitespace=True)

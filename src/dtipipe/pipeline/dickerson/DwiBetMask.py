@@ -5,16 +5,14 @@ from plumbum import local
 from .BaseTask import BaseTask
 from .DwiEddy import DwiEddy
 
-from ..bet_mask import bet_mask
-from .. import util
-
-DWI_BET_THRESHOLD = 0.1
+from dtipipe import bet_mask
+from dtipipe import util
 
 
 @luigi.util.requires(DwiEddy)
 class DwiBetMask(BaseTask):
 
-    dwi_bet_mask_threshold = FloatParameter(default=DWI_BET_THRESHOLD)
+    dwi_bet_mask_threshold = FloatParameter()
     fsldir = OptionalParameter(default=None)
 
     def output(self):
