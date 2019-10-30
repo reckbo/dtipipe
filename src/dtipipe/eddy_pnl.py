@@ -14,7 +14,7 @@ from . import util
 from . import TEST_DATA
 
 
-NUM_PROC_EDDY = 5
+NUM_PROC_EDDY = 10
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ def _multiprocessing_register(source_nii):
     return output
 
 
-def eddy_pnl(dwi, output, num_proc=20, fsldir=None, debug=False):
+def eddy_pnl(dwi, output, num_proc=NUM_PROC_EDDY, fsldir=None, debug=False):
     """
     Eddy current correction.
     """
@@ -194,5 +194,5 @@ class Cli(cli.Application):
                 sys.exit(1)
         eddy_pnl(dwi=self.dwi,
                  output=self.output,
-                 num_proc=self.nproc,
+                 num_proc=self.num_proc,
                  fsldir=self.fsldir)

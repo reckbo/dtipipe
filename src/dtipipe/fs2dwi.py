@@ -1,57 +1,39 @@
 import logging
 
+import coloredlogs
+import pytest
 from plumbum import local, cli
 import nibabel as nib
-# from plumbum.cmd import ResampleImageBySpacing, antsApplyTransforms, ImageMath
 
 from . import bse
+from .apply_antsRegistrationSyNMI import apply_antsRegistrationSyNMI
 from . import util
 from . import TEST_DATA
 
 
 log = logging.getLogger(__name__)
-
-REPO_DIR = local.path(__file__).parent.parent.parent
-NUM_PROC_ANTS = 5
+NUM_PROC_ANTS = 10
 
 
-def register_wmparc_to_dwi(brain, wmparc, masked_b0, output_wmparc, num_proc=NUM_PROC_ANTS,
-                           antspath=None):
-    with util.ants_env(antspath), local.tempdir() as tmpdir:
-        output_prefix = tmpdir / 'pre'
-        affine = output_prefix + '0GenericAffine.mat'
-        warp = output_prefix + '1Warp.nii.gz'
-        log.info('Compute warp from brain to baseline')
-        r = local[REPO_DIR / 'scripts' / 'antsRegistrationSyNMI.sh'].run(['-m', brain,
-                                                                          '-f', masked_b0,
-                                                                          '-o', output_prefix,
-                                                                          '-n', num_proc])
-        log.debug(f'antsRegistrationSyNMI.sh: {r}')
-        log.debug(f'Output files in {tmpdir}: {tmpdir // "*"}')
-        log.info('Apply warp to wmparc to create a resampled version in DWI space')
-        local['antsApplyTransforms']('-d', '3',
-                                     '-i', wmparc,
-                                     '-t', warp, affine,
-                                     '-r', masked_b0,
-                                     '-o', output_wmparc,
-                                     '--interpolation', 'NearestNeighbor')
-    log.info('Made {output_wmparc}')
-
-
-def fs2dwi(freesurfer_recon_dir, dwi_file, dwi_mask_file, freesurfer_home, fsldir, antspath):
+def fs2dwi(freesurfer_recon_dir, dwi_file, dwi_mask_file, output_dir,
+           freesurfer_home, fsldir, antspath, num_proc_ants=NUM_PROC_ANTS, debug=False):
+    """
+    Registers Freesurfer labelmap to DWI space.
+    """
 
     freesurfer_recon_dir = local.path(freesurfer_recon_dir)
     brain_mgz = freesurfer_recon_dir / 'mri' / 'brain.mgz'
     wmparc_mgz = freesurfer_recon_dir / 'mri' / 'wmparc.mgz'
+    output_dir = local.path(output_dir)
 
     with util.freesurfer_env(freesurfer_home, fsldir), local.tempdir() as tmpdir:
 
         masked_b0 = tmpdir / "masked_b0.nii.gz"
-        # b0maskedbrain = tmpdir / "b0maskedbrain.nii.gz"
+        masked_b0_brainres = tmpdir / "masked_b0_brainres.nii.gz"
         brain_nii = tmpdir / "brain.nii.gz"
         wmparc_nii = tmpdir / "wmparc.nii.gz"
-        wmparc_in_dwi = tmpdir / 'wmparcInDwi.nii.gz' # Sylvain wants both
-        # wmparc_in_brain = tmpdir / 'wmparcInBrain.nii.gz'
+        wmparc_in_dwi = tmpdir / 'wmparc_in_dwi.nii.gz'
+        wmparc_in_dwi_brainres = tmpdir / 'wmparc_in_dwi_brainres.nii.gz'
 
         log.info("Convert brain.mgz to nifti")
         mri_vol2vol = local['mri_vol2vol']
@@ -63,7 +45,7 @@ def fs2dwi(freesurfer_recon_dir, dwi_file, dwi_mask_file, freesurfer_home, fsldi
         mri_label2vol('--seg', wmparc_mgz, '--temp', brain_mgz, '--regheader', wmparc_mgz,
                       '--o', wmparc_nii)
 
-        log.info('Extract B0 from DWI and mask it')
+        log.info(f'Extract B0 from DWI and mask it ({masked_b0})')
         bse.bse(dwi=dwi_file, dwi_mask=dwi_mask_file, output=masked_b0)
 
         dwi_resolution = nib.load(str(masked_b0)).header['pixdim'][1:4].round()
@@ -75,108 +57,124 @@ def fs2dwi(freesurfer_recon_dir, dwi_file, dwi_mask_file, freesurfer_home, fsldi
             if resolution.ptp():
                 raise Exception(f'Resolution is not uniform among all the axes: {resolution}')
 
-        log.info('Register wmparc to B0')
-        register_wmparc_to_dwi(brain=brain_nii,
-                               wmparc=wmparc_nii,
-                               masked_b0=masked_b0,
-                               num_proc=NUM_PROC_ANTS,
-                               output_wmparc=wmparc_in_dwi,
-                               antspath=antspath)
+        log.info(f'Register wmparc to B0 (Make "{wmparc_in_dwi}")')
+        apply_antsRegistrationSyNMI(moving_image=brain_nii,
+                                    fixed_image=masked_b0,
+                                    moving_image_src=wmparc_nii,
+                                    output=wmparc_in_dwi,
+                                    num_proc=num_proc_ants,
+                                    antspath=antspath)
 
-#         if (dwi_res!=brain_res).any():
-#             print('DWI resolution is different from FreeSurfer brain resolution')
-#             print('wmparc wil be registered to both DWI and brain resolution')
-#             print('Check output files wmparcInDwi.nii.gz and wmparcInBrain.nii.gz')
+        if (dwi_resolution != brain_resolution).any():
+            log.info('DWI resolution is different from FreeSurfer brain resolution: '
+                     f'{dwi_resolution} != {brain_resolution}')
+            log.info(f'Resample B0 to brain resolution (Make "{masked_b0_brainres}")')
+            with util.ants_env(antspath):
+                local['ResampleImageBySpacing']('3', masked_b0,
+                                                masked_b0_brainres,
+                                                brain_resolution.tolist())
 
-#             print('Resampling B0 to brain resolution')
+            print(f'Register wmparc to upsampled B0 (Make "{wmparc_in_dwi_brainres}")')
+            apply_antsRegistrationSyNMI(moving_image=brain_nii,
+                                        fixed_image=masked_b0_brainres,
+                                        moving_image_src=wmparc_nii,
+                                        output=wmparc_in_dwi_brainres,
+                                        num_proc=num_proc_ants,
+                                        antspath=antspath)
 
-#             ResampleImageBySpacing('3', b0masked, b0maskedbrain, brain_res.tolist())
+        output_dir.mkdir()
 
-#             print('Registering wmparc to resampled B0')
-#             registerFs2Dwi(tmpdir, 'fsbrainToResampledB0', b0maskedbrain, brain, wmparc, wmparcinbrain)
+        masked_b0.copy(output_dir)
+        wmparc_in_dwi.copy(output_dir)
+        if masked_b0_brainres.exists():
+            masked_b0_brainres.copy(output_dir)
+            wmparc_in_dwi_brainres.copy(output_dir)
 
-
-#         # copying images to outDir
-#         b0masked.copy(self.parent.out)
-#         wmparcindwi.copy(self.parent.out)
-
-#         if b0maskedbrain.exists():
-#             b0maskedbrain.copy(self.parent.out)
-#             wmparcinbrain.copy(self.parent.out)
-
-#         if self.parent.debug:
-#             tmpdir.copy(self.parent.out, 'fs2dwi-debug-' + str(os.getpid()))
-
-
-#     print('See output files in ', self.parent.out._path)
+        log.info(f'Made "{output_dir}"')
 
 
-def test_fs2dwi(freesurfer_home, fsldir, antspath):
+@pytest.mark.slow
+def test_fs2dwi(freesurfer_home, fsldir, antspath, num_proc_ants):
     freesurfer_recon_dir = TEST_DATA / 'edit.FS6_004_006_bv'
     dwi_file = TEST_DATA / 'dwi_eddy.nii.gz'
     dwi_mask_file = TEST_DATA / 'dwi_mask.nii.gz'
-    fs2dwi(freesurfer_recon_dir=freesurfer_recon_dir,
-           dwi_file=dwi_file,
-           dwi_mask_file=dwi_mask_file,
-           freesurfer_home=freesurfer_home,
-           fsldir=fsldir,
-           antspath=antspath)
+    with local.tempdir() as tmpdir:
+        tmpdir = local.path('/tmp/fs2dwi')
+        output_dir = tmpdir
+        fs2dwi(freesurfer_recon_dir=freesurfer_recon_dir,
+               dwi_file=dwi_file,
+               dwi_mask_file=dwi_mask_file,
+               output_dir=output_dir,
+               freesurfer_home=freesurfer_home,
+               fsldir=fsldir,
+               antspath=antspath,
+               num_proc_ants=num_proc_ants)
+    assert output_dir.exists()
 
 
-# # class FsToDwi(cli.Application):
-# #     """Registers Freesurfer labelmap to DWI space."""
+class Cli(cli.Application):
 
-# #     fsdir = cli.SwitchAttr(
-# #         ['-f', '--freesurfer'],
-# #         cli.ExistingDirectory,
-# #         help='freesurfer subject directory',
-# #         mandatory=True)
+    __doc__ = fs2dwi.__doc__
 
-# #     dwi = cli.SwitchAttr(
-# #         ['--dwi'],
-# #         cli.ExistingFile,
-# #         help='target DWI',
-# #         mandatory=True)
+    freesurfer_recon_dir = cli.SwitchAttr(
+        ['-f', '--freesurfer-recon-dir'],
+        argtype=cli.ExistingDirectory,
+        mandatory=True,
+        help='FreeSurfer subject recon directory')
 
-# #     dwimask = cli.SwitchAttr(
-# #         ['--dwimask'],
-# #         cli.ExistingFile,
-# #         help='DWI mask',
-# #         mandatory=True)
+    dwi_file = cli.SwitchAttr(
+        ['--dwi'],
+        argtype=cli.ExistingFile,
+        mandatory=True,
+        help='Target DWI')
 
-# #     out = cli.SwitchAttr(
-# #         ['-o', '--outDir'],
-# #         help='output directory',
-# #         mandatory=True)
+    dwi_mask_file = cli.SwitchAttr(
+        ['--dwi-mask'],
+        argtype=cli.ExistingFile,
+        mandatory=True,
+        help='DWI mask')
 
-# #     force= cli.Flag(
-# #         ['--force'],
-# #         help='turn on this flag to overwrite existing output',
-# #         default= False,
-# #         mandatory= False)
+    output_dir = cli.SwitchAttr(
+        ['-o', '--output-dir'],
+        argtype=cli.NonexistentPath,
+        mandatory=True,
+        help='Output directory')
 
-# #     debug = cli.Flag(
-# #         ['-d','--debug'],
-# #         help='Debug mode, saves intermediate transforms to out/fs2dwi-debug-<pid>',
-# #         default= False)
+    num_proc = cli.SwitchAttr(
+        ['-n', '--num-proc'],
+        argtype=int,
+        default=NUM_PROC_ANTS,
+        help='Number of threads')
 
-# #     def main(self):
+    antspath = cli.SwitchAttr(
+        ['--antspath'],
+        argtype=cli.ExistingDirectory,
+        help='Path to root ANTs bin/ directory')
 
-# #         if not self.nested_command:
-# #             print("No command given")
-# #             sys.exit(1)
+    freesurfer_home = cli.SwitchAttr(
+        ['--fshome', '--freesurfer-home'],
+        argtype=cli.ExistingDirectory,
+        help='Path to FreeSurfer installation (FREESURFER_HOME)')
 
-# #         self.fshome = local.path(os.getenv('FREESURFER_HOME'))
+    fsldir = cli.SwitchAttr(
+        ['--fsldir'],
+        argtype=cli.ExistingDirectory,
+        help='Root path of FSL (FSL_DIR)')
 
-# #         if not self.fshome:
-# #             print('Set FREESURFER_HOME first.')
-# #             sys.exit(1)
+    log_level = cli.SwitchAttr(
+        ['--log-level'],
+        argtype=cli.Set("CRITICAL", "ERROR", "WARNING",
+                        "INFO", "DEBUG", "NOTSET", case_sensitive=False),
+        default='INFO',
+        help='Python log level')
 
-# #         print('Making output directory')
-# #         self.out= local.path(self.out)
-# #         if self.out.exists() and self.force:
-# #             print('Deleting existing directory')
-# #             self.out.delete()
-# #         self.out.mkdir()
-
-
+    def main(self):
+        coloredlogs.install(level=self.log_level)
+        fs2dwi(freesurfer_recon_dir=self.freesurfer_recon_dir,
+               dwi_file=self.dwi_file,
+               dwi_mask_file=self.dwi_mask_file,
+               output_dir=self.output_dir,
+               freesurfer_home=self.freesurfer_home,
+               fsldir=self.fsldir,
+               antspath=self.antspath,
+               num_proc_ants=self.num_proc)

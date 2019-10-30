@@ -14,6 +14,9 @@ def pytest_addoption(parser):
     parser.addoption(
         "--num-proc-ants", action="store", default=10, help="Number of threads for ANTs"
     )
+    parser.addoption(
+        "--num-proc-eddy", action="store", default=10, help="Number of threads for eddy_pnl"
+    )
 
 
 @pytest.fixture
@@ -30,6 +33,10 @@ def freesurfer_home(request):
 def antspath(request):
     return request.config.getoption("--antspath")
 
+
+@pytest.fixture
+def num_proc_eddy(request):
+    return request.config.getoption("--num-proc-eddy")
 
 @pytest.fixture
 def num_proc_ants(request):

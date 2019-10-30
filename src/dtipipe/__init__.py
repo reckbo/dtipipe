@@ -7,7 +7,9 @@ TEST_DATA = local.path(__file__).parent.parent.parent / 'test_data'
 from . import bse
 from . import eddy_pnl
 from . import bet_mask
-from . import pipeline
 from . import apply_antsRegistrationSyNMI
+from . import fs2dwi
+
+from . import pipeline
 
 
