@@ -20,11 +20,13 @@ yapf = "^0.28.0"
 ipython = "^7.9"
 flake8 = "^3.7"
 
-[build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
-
 [tool.poetry.scripts]
 bse = "dtipipe:bse.Cli.run"
 eddy_pnl = "dtipipe:eddy_pnl.Cli.run"
 bet_mask = "dtipipe:bet_mask.Cli.run"
+apply_antsRegistrationSyNMI = "dtipipe:apply_antsRegistrationSyNMI.Cli.run"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
+

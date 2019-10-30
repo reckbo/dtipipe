@@ -8,5 +8,6 @@ from . import bse
 from . import eddy_pnl
 from . import bet_mask
 from . import pipeline
+from . import apply_antsRegistrationSyNMI
 
 

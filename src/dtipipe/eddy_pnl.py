@@ -160,11 +160,11 @@ class Cli(cli.Application):
         help='Force overwrite')
 
     num_proc = cli.SwitchAttr(
-        ['-n', '--nproc'],
+        ['-n', '--num-proc'],
         argtype=int,
         default=NUM_PROC_EDDY,
         help=('number of threads to use, if other processes in your computer '
-              'becomes sluggish/you run into memory error, reduce --nproc'))
+              'becomes sluggish/you run into memory error, reduce number'))
 
     debug = cli.Flag(
         ['-d', '--debug'],
@@ -184,7 +184,7 @@ class Cli(cli.Application):
         help='Python log level')
 
     def main(self):
-        coloredlogs.install()
+        coloredlogs.install(self.log_level)
         self.output = local.path(self.output)
         if self.output.exists():
             if self.overwrite:
