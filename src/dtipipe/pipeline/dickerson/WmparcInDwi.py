@@ -37,16 +37,21 @@ class WmparcInDwi(BaseTask):
                     dwi_mask=self.clone(DwiBetMask),
                     freesurfer_recon_dir=InputFreesurferRecon(self.freesurfer_recon_dir))
 
+    def output_dir(self):
+        return local.path(self.output_session_dir) / f'{self.output_basename}.wmparc_in_dwi'
+
     def output(self):
-        return {suffix: local.path(self.output_session_dir,
-                                   self.output_basename + '-ed.' + suffix) for
-                suffix in ['nii.gz', 'bval', 'bvec']}
+        output_dir = self.output_dir()
+        return dict(wmparc_in_dwi=output_dir / 'wmparc_in_dwi.nii.gz',
+                    wmparc_in_dwi_brainres=output_dir / 'wmparc_in_dwi_brainres.nii.gz',
+                    masked_b0=output_dir / 'masked_b0.nii.gz',
+                    masked_b0_brainres=output_dir / 'masked_b0_brainres.nii.gz')
 
     def run(self):
-        fs2dwi.fs2dwi(freesurfer_recon_dir=self.freesurfer_recon_dir,
-                      dwi_file=self.input()['dwi'],
+        fs2dwi.fs2dwi(freesurfer_recon_dir=self.input()['freesurfer_recon_dir'],
+                      dwi_file=self.input()['dwi']['nii.gz'],
                       dwi_mask_file=self.input()['dwi_mask'],
-                      output_dir=self.output(),
+                      output_dir=self.output_dir(),
                       freesurfer_home=self.freesurfer_home,
                       fsldir=self.fsldir,
                       antspath=self.antspath,

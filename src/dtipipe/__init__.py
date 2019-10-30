@@ -9,7 +9,8 @@ from . import eddy_pnl
 from . import bet_mask
 from . import apply_antsRegistrationSyNMI
 from . import fs2dwi
-
+from . import ukf
+from . import nifti2nhdr
 from . import pipeline
 
 

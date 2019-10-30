@@ -12,6 +12,9 @@ def pytest_addoption(parser):
         "--antspath", action="store", default=None, help="Path to root ANTs bin/ directory"
     )
     parser.addoption(
+        "--ukf-bin", action="store", default=None, help="Path to root UKFTractography binary"
+    )
+    parser.addoption(
         "--num-proc-ants", action="store", default=10, help="Number of threads for ANTs"
     )
     parser.addoption(
@@ -32,6 +35,11 @@ def freesurfer_home(request):
 @pytest.fixture
 def antspath(request):
     return request.config.getoption("--antspath")
+
+
+@pytest.fixture
+def ukftractography_bin(request):
+    return request.config.getoption("--ukf-bin")
 
 
 @pytest.fixture

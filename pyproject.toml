@@ -26,6 +26,7 @@ eddy_pnl = "dtipipe:eddy_pnl.Cli.run"
 bet_mask = "dtipipe:bet_mask.Cli.run"
 apply_antsRegistrationSyNMI = "dtipipe:apply_antsRegistrationSyNMI.Cli.run"
 fs2dwi = "dtipipe:fs2dwi.Cli.run"
+nifti2nhdr = "dtipipe:nifti2nhdr.Cli.run"
 
 [build-system]
 requires = ["poetry>=0.12"]

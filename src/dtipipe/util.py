@@ -109,9 +109,22 @@ def read_bvecs(bvec_file, normalize=False):
     return bvecs
 
 
+def read_bvals(bval_file):
+    return [float(i) for i in bval_file.read().strip().split()]
+
+
 def write_bvecs(bvecs, bvec_file):
     with open(bvec_file, 'w') as f:
         f.write(('\n').join((' ').join(str(i) for i in row) for row in bvecs))
+
+
+def bvec_scaling(bval, bvec, b_max):
+    if bval:
+        factor = np.sqrt(bval / b_max)
+        if np.linalg.norm(bvec) != factor:
+            bvec = np.array(bvec) * factor
+    bvec = [str(x) for x in bvec]
+    return ('   ').join(bvec)
 
 
 def transpose(bvecs):
