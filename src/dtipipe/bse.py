@@ -107,6 +107,11 @@ class Cli(cli.Application):
         argtype=cli.NonexistentPath,
         help='Extracted baseline image')
 
+    dwi_mask = cli.SwitchAttr(
+        ['-m', '--mask'],
+        argtype=cli.ExistingFile,
+        help='Mask B0')
+
     b0_threshold = cli.SwitchAttr(
         ['-t', '--threshold'],
         argtype=float,
@@ -137,6 +142,7 @@ class Cli(cli.Application):
         coloredlogs.install(self.log_level)
         bse(dwi=self.dwi,
             output=self.output,
+            dwi_mask=self.dwi_mask,
             b0_threshold=self.b0_threshold,
             extract_type=self.extract_type,
             fsldir=self.fsldir)
