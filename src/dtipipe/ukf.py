@@ -1,5 +1,6 @@
 import logging
 import json
+import toolz
 
 import pytest
 import coloredlogs
@@ -12,17 +13,16 @@ from . import TEST_DATA
 
 log = logging.getLogger(__name__)
 
-UKF_DEFAULT_PARAMS = ['--numTensor', 2,
-                      '--stoppingFA', 0.15,
-                      '--seedingThreshold', 0.18,
-                      '--Qm', 0.001,
-                      '--Ql', 70,
-                      '--Rs', 0.015,
-                      '--stepLength', 0.3,
-                      '--recordLength', 1.7,
-                      '--stoppingThreshold', 0.1,
-                      '--seedsPerVoxel', 10,
-                      '--recordTensors']
+UKF_DEFAULT_PARAMS = {'numTensor': 2,
+                      'stoppingFA': 0.15,
+                      'seedingThreshold': 0.18,
+                      'Qm': 0.001,
+                      'Ql': 70,
+                      'Rs': 0.015,
+                      'stepLength': 0.3,
+                      'recordLength': 1.7,
+                      'stoppingThreshold': 0.1,
+                      'seedsPerVoxel': 10}
 
 
 def ukf(dwi_file, dwi_mask_file, output_vtk, ukftractography_bin='UKFTractography', **ukf_params):
@@ -45,13 +45,13 @@ def ukf(dwi_file, dwi_mask_file, output_vtk, ukftractography_bin='UKFTractograph
 
         log.info('Convert the DWI and mask to nrrd')
         nifti2nhdr.nifti2nhdr(dwi_short,
-                              dwi_short.with_suffix('.bval', depth=2),
-                              dwi_short.with_suffix('.bvec', depth=2),
+                              dwi_file.with_suffix('.bval', depth=2),
+                              dwi_file.with_suffix('.bvec', depth=2),
                               dwi_nrrd)
         nifti2nhdr.nifti2nhdr(dwi_mask_short, None, None, dwi_mask_nrrd)
 
-        ukf_params = UKF_DEFAULT_PARAMS.copy()
-        ukf_params = ukf_params.update(ukf_params)
+        ukf_params = {**UKF_DEFAULT_PARAMS, **ukf_params}
+        ukf_params = toolz.concat([[f'--{param}', val] for (param, val) in ukf_params.items()])
 
         log.info('Run UKF tractography')
         UKFTractography = local[ukftractography_bin]
@@ -59,7 +59,8 @@ def ukf(dwi_file, dwi_mask_file, output_vtk, ukftractography_bin='UKFTractograph
                         '--maskFile', dwi_mask_nrrd,
                         '--seedsFile', dwi_mask_nrrd,
                         '--tracts', output_vtk,
-                        **ukf_params)
+                        '--recordTensors',
+                        *ukf_params)
 
 
 @pytest.mark.slow
