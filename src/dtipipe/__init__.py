@@ -2,7 +2,8 @@ __version__ = '0.1.0'
 
 from plumbum import local
 
-TEST_DATA = local.path(__file__).parent.parent.parent / 'test_data'
+REPO_DIR = local.path(__file__).parent.parent.parent
+TEST_DATA = REPO_DIR / 'test_data'
 
 from . import bse
 from . import eddy_pnl

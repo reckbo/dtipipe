@@ -6,15 +6,15 @@ authors = ["Ryan Eckbo <ryan.eckbo@mgh.harvard.edu>"]
 
 [tool.poetry.dependencies]
 python = "^3.6"
-numpy = "^1.17"
-plumbum = "^1.6"
-pandas = "^0.25.2"
-toolz = "^0.10.0"
-luigi = "^2.8"
-coloredlogs = "^10.0"
-nibabel = "^2.5"
+numpy = "*"
+plumbum = "*"
+pandas = "*"
+toolz = "*"
+luigi = "*"
+coloredlogs = "*"
+nibabel = "*"
+vtk = "*"
 tract_querier = {git = "https://github.com/demianw/tract_querier.git"}
-vtk = "^8.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"

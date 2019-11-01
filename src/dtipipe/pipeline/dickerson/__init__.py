@@ -6,3 +6,4 @@ from .DwiEddy import DwiEddy
 from .DwiBetMask import DwiBetMask
 from .WmparcInDwi import WmparcInDwi
 from .Ukf import Ukf
+from .UkfTracts import UkfTracts
