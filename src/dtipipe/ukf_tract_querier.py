@@ -1,3 +1,4 @@
+import filecmp
 import logging
 from multiprocessing import Pool
 
@@ -16,7 +17,6 @@ DEFAULT_NUM_PROC = 10
 
 def _activate_tensors(vtk_file):
     new_vtk_file = vtk_file.dirname / (vtk_file.stem[2:] + ''.join(vtk_file.suffixes))
-    log.info(f'Process {vtk_file} -> {new_vtk_file}')
     activate_tensors.activate_tensors(vtk_file, new_vtk_file)
     vtk_file.delete()
 
@@ -66,6 +66,7 @@ def test_ukf_tract_querier(num_proc_ukf_tract_querier):
     input_vtk = TEST_DATA / 'dwi.vtk'
     input_query_file = TEST_DATA / 'wmql-2.0.qry'
     input_atlas_file = TEST_DATA / 'fs2dwi' / 'wmparc_in_dwi.nii.gz'
+    expected_output_vtks = sorted(TEST_DATA / 'ukf_tract_querier' // '*.vtk')
     with local.tempdir() as tmpdir:
         tmpdir = local.path('/tmp/ukf_tract_querier')  # FIXME
         output_dir = tmpdir
@@ -74,7 +75,10 @@ def test_ukf_tract_querier(num_proc_ukf_tract_querier):
                           input_query_file,
                           output_dir,
                           num_proc=num_proc_ukf_tract_querier)
-        assert len(output_dir // '*.vtk') == 59  # TODO
+        output_vtks = sorted(output_dir // '*.vtk')
+        assert len(output_vtks) == len(expected_output_vtks)
+        for (output, expected) in zip(output_vtks, expected_output_vtks):
+            assert filecmp.cmp(output, expected)
 
 # class Cli(cli.Application):
 
