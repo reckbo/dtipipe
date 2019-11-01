@@ -115,7 +115,7 @@ class Cli(cli.Application):
         help='Python log level')
 
     def main(self):
-        coloredlogs.install(level=self.level)
+        coloredlogs.install(level=self.log_level)
         ukf_params = json.loads(self.ukf_params)
         ukf(dwi_file=self.dwi_file,
             dwi_mask_file=self.dwi_mask_file,

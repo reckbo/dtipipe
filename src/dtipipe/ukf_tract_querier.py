@@ -23,12 +23,8 @@ def _activate_tensors(vtk_file):
 
 def ukf_tract_querier(ukf_vtk, atlas_file, query_file, output_dir, num_proc=DEFAULT_NUM_PROC):
     """
-    Wrapper around tract_querier that first preprocesses the input tractography file
-    before calling tract_querier.
-
-    The following two preprocessing steps are performed:
-      1. Short tracts are removed
-      2. nan's and inf's are replaced by 0's and large finite numbers respectively.
+    Wrapper around tract_querier that first removes short tracts from the input tractography file
+    and following tract_querier converts nan's and inf's to 0's and large finite numbers.
     """
 
     ukf_vtk = local.path(ukf_vtk)
@@ -80,35 +76,53 @@ def test_ukf_tract_querier(num_proc_ukf_tract_querier):
         for (output, expected) in zip(output_vtks, expected_output_vtks):
             assert filecmp.cmp(output, expected)
 
-# class Cli(cli.Application):
 
-#     __doc__ = ukf_tract_querier.__doc__
+class Cli(cli.Application):
 
-    # dwi_file = cli.SwitchAttr(
-    #     ['--dwi'],
-    #     argtype=cli.ExistingFile,
-    #     mandatory=True,
-    #     help='DWI in NIFTI format')
+    __doc__ = ukf_tract_querier.__doc__
 
-    # output_dir = cli.SwitchAttr(
-    #     ['-o', '--output-dir'],
-    #     argtype=cli.NonexistentPath,
-    #     mandatory=True,
-    #     help='Output directory')
+    input_vtk = cli.SwitchAttr(
+        ['-t', '--tractography-file'],
+        argtype=cli.ExistingFile,
+        mandatory=True,
+        help='Input tractography VTK file')
 
-    # num_proc = cli.SwitchAttr(
-    #     ['-n', '--num-proc'],
-    #     argtype=int,
-    #     default=NUM_PROC_ANTS,
-    #     help='Number of threads')
+    input_atlas_file = cli.SwitchAttr(
+        ['-a', '--atlas'],
+        argtype=cli.ExistingFile,
+        mandatory=True,
+        help='Input atlas file (e.g. dwi_in_wmparc.nii.gz)')
 
-#     log_level = cli.SwitchAttr(
-#         ['--log-level'],
-#         argtype=cli.Set("CRITICAL", "ERROR", "WARNING",
-#                         "INFO", "DEBUG", "NOTSET", case_sensitive=False),
-#         default='INFO',
-#         help='Python log level')
+    input_query_file = cli.SwitchAttr(
+        ['-q', '--query'],
+        argtype=cli.ExistingFile,
+        mandatory=True,
+        help='Input query file (.qry)')
 
-#     def main(self):
-#         coloredlogs.install(level=self.level)
-#         ukf_tract_querier()
+    output_dir = cli.SwitchAttr(
+        ['-o', '--output-dir'],
+        argtype=cli.NonexistentPath,
+        mandatory=True,
+        help='Output directory where VTK tracts will be saved to')
+
+    num_proc = cli.SwitchAttr(
+        ['-n', '--num-proc'],
+        argtype=int,
+        default=DEFAULT_NUM_PROC,
+        help='Number of threads used in postprocessing the generated VTK tracts')
+
+    log_level = cli.SwitchAttr(
+        ['--log-level'],
+        argtype=cli.Set("CRITICAL", "ERROR", "WARNING",
+                        "INFO", "DEBUG", "NOTSET",
+                        case_sensitive=False),
+        default='INFO',
+        help='Python log level')
+
+    def main(self):
+        coloredlogs.install(level=self.log_level)
+        ukf_tract_querier(self.input_vtk,
+                          self.input_atlas_file,
+                          self.input_query_file,
+                          self.output_dir,
+                          num_proc=self.num_proc)
