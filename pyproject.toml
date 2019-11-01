@@ -13,6 +13,8 @@ toolz = "^0.10.0"
 luigi = "^2.8"
 coloredlogs = "^10.0"
 nibabel = "^2.5"
+tract_querier = {git = "https://github.com/demianw/tract_querier.git"}
+vtk = "^8.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"

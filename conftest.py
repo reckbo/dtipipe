@@ -20,6 +20,10 @@ def pytest_addoption(parser):
     parser.addoption(
         "--num-proc-eddy", action="store", default=10, help="Number of threads for eddy_pnl"
     )
+    parser.addoption(
+        "--num-proc-ukf-tract-querier", action="store", default=10,
+        help="Number of threads for ukf_tract_querier"
+    )
 
 
 @pytest.fixture
@@ -46,6 +50,12 @@ def ukftractography_bin(request):
 def num_proc_eddy(request):
     return request.config.getoption("--num-proc-eddy")
 
+
 @pytest.fixture
 def num_proc_ants(request):
     return request.config.getoption("--num-proc-ants")
+
+
+@pytest.fixture
+def num_proc_ukf_tract_querier(request):
+    return request.config.getoption("--num-proc-ukf-tract-querier")

@@ -418,6 +418,19 @@ python-versions = ">= 2.7, !=3.0.*, !=3.1.*, !=3.2.*, != 3.3.*"
 version = "5.1.1"
 
 [[package]]
+category = "main"
+description = ""
+name = "tract_querier"
+optional = false
+python-versions = "*"
+version = "0.1"
+
+[package.source]
+reference = "3f9fad638fdfdaa336a838a32a52ab0c57a65fdd"
+type = "git"
+url = "https://github.com/demianw/tract_querier.git"
+
+[[package]]
 category = "dev"
 description = "Traitlets Python config system"
 name = "traitlets"
@@ -429,6 +442,14 @@ version = "4.3.3"
 decorator = "*"
 ipython-genutils = "*"
 six = "*"
+
+[[package]]
+category = "main"
+description = "VTK is an open-source toolkit for 3D computer graphics, image processing, and visualization"
+name = "vtk"
+optional = false
+python-versions = "*"
+version = "8.1.2"
 
 [[package]]
 category = "dev"
@@ -459,7 +480,7 @@ version = "0.6.0"
 more-itertools = "*"
 
 [metadata]
-content-hash = "20148a17f4090028f86e5303cc104475ee989e932a491b8ecba8bae0f5dc659c"
+content-hash = "6d53ecfec838a1f14466b423545de4cccd6df10eedc0097d6a7eae43896256c1"
 python-versions = "^3.6"
 
 [metadata.hashes]
@@ -505,7 +526,9 @@ pytz = ["1c557d7d0e871de1f5ccd5833f60fb2550652da6be2693c1e02300743d21500d", "b02
 six = ["3350809f0555b11f552448330d0b52d5f24c91a322ea4a15ef22629740f3761c", "d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73"]
 toolz = ["08fdd5ef7c96480ad11c12d472de21acd32359996f69a5259299b540feba4560"]
 tornado = ["0662d28b1ca9f67108c7e3b77afabfb9c7e87bde174fbda78186ecedc2499a9d", "4e5158d97583502a7e2739951553cbd88a72076f152b4b11b64b9a10c4c49409", "732e836008c708de2e89a31cb2fa6c0e5a70cb60492bee6f1ea1047500feaf7f", "8154ec22c450df4e06b35f131adc4f2f3a12ec85981a203301d310abf580500f", "8e9d728c4579682e837c92fdd98036bd5cdefa1da2aaf6acf26947e6dd0c01c5", "d4b3e5329f572f055b587efc57d29bd051589fb5a43ec8898c77a47ec2fa2bbb", "e5f2585afccbff22390cddac29849df463b252b711aa2ce7c5f3f342a5b3b444"]
+tract_querier = []
 traitlets = ["70b4c6a1d9019d7b4f6846832288f86998aa3b9207c6821f3578a6a6a467fe44", "d023ee369ddd2763310e4c3eae1ff649689440d4ae59d7485eb4cfbbe3e359f7"]
+vtk = ["110dd7d730584b2e8c13e15f1b245d1b5afb9a6e163223e1fb0e775cec818e92", "28df91add29d9cdd6c49235b2c65e31ab50c8655c56ad1a5914b605e22554d7d", "34b43d32609d81d94a7122e388f7d6a0883138438484d0ee29158726810f6704", "44454f9dd6c41f20b904b41e1ac0dd06cc3367952da1a8d8d3074e1a40dce916", "56e73eeba6402ba497a24ebdbe773cadbf01b9f7c12b3a2e26f8b40f203d718e", "5c2634afaabd2243c5fbe0f4aa9cff66537cfbcb5d4893e93c31cfce878a413c", "8c6809a3526c8cf06b921dec06cd672f54baa3a050124f0f19f0adb6cf283aa4", "cd68246764412e8f6855e8e73772392aa826b9d6c3d59e7544ce22af1ad7dcc8", "d4d834d29abf98c67a63328c271e82bde3f769cbae295fb91e840bead2298d13", "e790aed1a776d3682b2c38a5a795a0f46e3043f96ed113a3bbaf7ef5eaaeba08", "ee17372ded18987480e3e07405f9b36fc4e2a0c1da1503628c4980a3957d7c98"]
 wcwidth = ["3df37372226d6e63e1b1e1eda15c594bca98a22d33a23832a90998faa96bc65e", "f4ebe71925af7b40a864553f761ed559b43544f8f71746c2d756c7fe788ade7c"]
 yapf = ["02ace10a00fa2e36c7ebd1df2ead91dbfbd7989686dc4ccbdc549e95d19f5780", "6f94b6a176a7c114cfa6bad86d40f259bbe0f10cf2fa7f2f4b3596fc5802a41b"]
 zipp = ["3718b1cbcd963c7d4c5511a8240812904164b7f381b647143a89d3b98f9bcd8e", "f06903e9f1f43b12d371004b4ac7b06ab39a44adc747266928ae6debfa7b3335"]
