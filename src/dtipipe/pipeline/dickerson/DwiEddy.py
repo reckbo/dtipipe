@@ -19,7 +19,7 @@ class DwiEddy(BaseTask):
                 suffix in ['nii.gz', 'bval', 'bvec']}
 
     def run(self):
-        eddy_pnl(dwi=self.input()['nii.gz'],
-                 output=self.output()['nii.gz'],
-                 num_proc=self.num_proc_eddy,
-                 fsldir=self.fsldir)
+        eddy_pnl.eddy_pnl(dwi=self.input()['nii.gz'],
+                          output=self.output()['nii.gz'],
+                          num_proc=self.num_proc_eddy,
+                          fsldir=self.fsldir)

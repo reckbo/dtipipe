@@ -29,7 +29,7 @@ def bse(dwi, output=None, dwi_mask=None, b0_threshold=DEFAULT_B0_THRESHOLD, extr
         raise Exception(f'Expected .nii.gz file, got: {dwi}')
 
     if not output:
-        output = dwi[:-9] + '_bse.nii.gz'
+        output = str(dwi)[:-9] + '_bse.nii.gz'
 
     bval_file = local.path(dwi.with_suffix('.bval', depth=2))
     bvals = [float(i) for i in bval_file.read().strip().split()]
