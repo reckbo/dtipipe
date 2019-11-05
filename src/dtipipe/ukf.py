@@ -41,14 +41,14 @@ def ukf(dwi_file, dwi_mask_file, output_vtk, ukftractography_bin='UKFTractograph
         for (input_file, output_file) in [(dwi_file, dwi_short), (dwi_mask_file, dwi_mask_short)]:
             img = nib.load(str(input_file))
             nib.Nifti1Image(img.get_data().astype('int16'), img.affine, img.header) \
-                .to_filename(output_file)
+                .to_filename(str(output_file))
 
         log.info('Convert the DWI and mask to nrrd')
-        nifti2nhdr.nifti2nhdr(dwi_short,
+        nifti2nhdr.nifti2nhdr(str(dwi_short),
                               dwi_file.with_suffix('.bval', depth=2),
                               dwi_file.with_suffix('.bvec', depth=2),
                               dwi_nrrd)
-        nifti2nhdr.nifti2nhdr(dwi_mask_short, None, None, dwi_mask_nrrd)
+        nifti2nhdr.nifti2nhdr(str(dwi_mask_short), None, None, dwi_mask_nrrd)
 
         ukf_params = {**UKF_DEFAULT_PARAMS, **ukf_params}
         ukf_params = toolz.concat([[f'--{param}', val] for (param, val) in ukf_params.items()])
