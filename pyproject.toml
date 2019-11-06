@@ -29,6 +29,7 @@ bet_mask = "dtipipe:bet_mask.Cli.run"
 apply_antsRegistrationSyNMI = "dtipipe:apply_antsRegistrationSyNMI.Cli.run"
 fs2dwi = "dtipipe:fs2dwi.Cli.run"
 nifti2nhdr = "dtipipe:nifti2nhdr.Cli.run"
+ukf = "dtipipe:ukf.Cli.run"
 ukf_tract_querier = "dtipipe:ukf_tract_querier.Cli.run"
 
 [build-system]
