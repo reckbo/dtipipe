@@ -1,14 +1,14 @@
-An implementation of PNL's DTI processing scripts and pipelines.  Pipelines
-are implemented using [Luigi](https://github.com/spotify/luigi).
+An implementation of PNL's DTI processing [scripts](https://github.com/pnlbwh/pnlNipype) and
+pipelines. Pipelines are implemented using [Luigi](https://github.com/spotify/luigi).
 
 
 # Install
 
-## Using Poetry
-
-[poetry](https://poetry.eustace.io/)
+## Using [Poetry](https://poetry.eustace.io/)
 
 ```shell
+poetry new my_project
+cd my_project
 poetry add --git https://github.com/reckbo/dtipipe
 ```
 
@@ -21,7 +21,7 @@ virtualenv .venv --python=python3
 source .venv/bin/activate{.*sh}
 ```
 
-Numpy needs to be installed first otherwise `tract_querier` fails to install:
+Numpy needs to be installed first otherwise `tract_querier` fails to build:
 
 ```shell
 pip install numpy
@@ -44,10 +44,14 @@ pip install git+https://github.com/reckbo/dtitpipe
 
 To run a script, simply activate your python environment and call the script, e.g
 
+Using virtualenv:
+
 ```shell
 source .venv/bin/activate{.*sh*}
 ukf --help
 ```
+
+Using [Poetry](https://poetry.eustace.io/):
 
 ```shell
 poetry run ukf --help
