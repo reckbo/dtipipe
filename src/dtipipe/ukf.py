@@ -27,7 +27,7 @@ UKF_DEFAULT_PARAMS = {'numTensor': 2,
 
 def ukf(dwi_file, dwi_mask_file, output_vtk, ukftractography_bin='UKFTractography', **ukf_params):
     """
-    Run UKFTractography on DWI and mask in NIFTI format.
+    Run UKFTractography given a DWI and DWI mask in NIFTI format.
     """
 
     with local.tempdir() as tmpdir:

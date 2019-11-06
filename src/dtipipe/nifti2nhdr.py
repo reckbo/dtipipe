@@ -42,6 +42,9 @@ def find_mf(F):
 
 
 def nifti2nhdr(nifti, bval, bvec, nhdr):
+    """
+    Convert a nifti to nrrd by creating an nhdr header.
+    """
 
     print('Converting ', nifti)
 
