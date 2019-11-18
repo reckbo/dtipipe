@@ -60,7 +60,8 @@ def ukf(dwi_file, dwi_mask_file, output_vtk, ukftractography_bin='UKFTractograph
                         '--seedsFile', dwi_mask_nrrd,
                         '--tracts', output_vtk,
                         '--recordTensors',
-                        '--freewater',
+                        '--freeWater',
+                        '--recordFreeWater',
                         *ukf_params)
 
 

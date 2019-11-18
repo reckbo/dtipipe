@@ -32,9 +32,14 @@ def ukf_tract_querier(ukf_vtk, atlas_file, query_file, output_dir, num_proc=DEFA
     query_file = local.path(query_file)
     output_dir = local.path(output_dir)
 
+    if output_dir.exists():
+        raise Exception(f'{output_dir} already exists')
+
     with local.tempdir() as tmpdir:
 
         pruned_ukf_vtk = tmpdir / 'pruned_ukf.vtk'
+        tmp_output_dir = tmpdir / 'output'
+        tmp_output_dir.mkdir()
 
         log.info(f'Remove short tracts from the tractography file (Make {pruned_ukf_vtk})')
         r = local['tract_math'].run([ukf_vtk, 'tract_remove_short_tracts', '2', pruned_ukf_vtk])
@@ -43,19 +48,22 @@ def ukf_tract_querier(ukf_vtk, atlas_file, query_file, output_dir, num_proc=DEFA
             raise Exception(f'tract_math failed to make {pruned_ukf_vtk}\n'
                             f'tract_math output: {r}')
 
-        log.info(f'Run tract_querier (Make {output_dir}/*.vtk)')
-        output_dir.mkdir()
+        log.info(f'Run tract_querier (Make {tmp_output_dir}/*.vtk)')
         local['tract_querier'].run(['-t', pruned_ukf_vtk,
                                     '-a', atlas_file,
                                     '-q', query_file,
-                                    '-o', output_dir / '_'])
+                                    '-o', tmp_output_dir / '_'])
 
         log.info(f"Update the tensor data format in each output vtk and replace nan's with 0 "
                  "and inf's with large finite numbers")
         pool = Pool(int(num_proc))
-        pool.map_async(_activate_tensors, output_dir.glob('*.vtk'))
+        pool.map_async(_activate_tensors, tmp_output_dir.glob('*.vtk'))
         pool.close()
         pool.join()
+
+        log.info(f'Copy {tmp_output_dir} to {output_dir}')
+        output_dir.parent.mkdir()
+        tmp_output_dir.copy(output_dir)
 
 
 def test_ukf_tract_querier(num_proc_ukf_tract_querier):

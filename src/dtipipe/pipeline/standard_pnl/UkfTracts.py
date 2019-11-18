@@ -25,7 +25,8 @@ class UkfTracts(BaseTask):
                     atlas=self.clone(WmparcInDwi))
 
     def output(self):
-        return local.path(self.output_session_dir) / f'{self.output_basename}.tracts'
+        stem = local.path(self.tract_querier_query_file).stem
+        return local.path(self.output_session_dir) / f'{self.output_basename}.tracts.{stem}'
 
     def run(self):
         ukf_tract_querier.ukf_tract_querier(ukf_vtk=self.input()['tractography'],
