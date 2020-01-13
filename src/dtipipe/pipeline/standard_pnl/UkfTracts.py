@@ -5,6 +5,7 @@ from plumbum import local
 
 from dtipipe import ukf_tract_querier
 from dtipipe import REPO_DIR
+from dtipipe import util
 from .BaseTask import BaseTask
 from .WmparcInDwi import WmparcInDwi
 from .Ukf import Ukf
@@ -34,3 +35,6 @@ class UkfTracts(BaseTask):
                                             query_file=self.tract_querier_query_file,
                                             output_dir=self.output(),
                                             num_proc=self.num_proc_ukf_tract_querier)
+
+    def freeview_wmparc_in_dwi(self):
+        self.requires()['atlas'].freeview()

@@ -1,8 +1,9 @@
 
 from luigi import FloatParameter, Parameter, OptionalParameter, IntParameter
-from plumbum import local
+from plumbum import local, BG
 
 from dtipipe import fs2dwi
+from dtipipe import util
 from .BaseTask import BaseTask
 from .InputFreesurferRecon import InputFreesurferRecon
 from .DwiEddy import DwiEddy
@@ -56,3 +57,10 @@ class WmparcInDwi(BaseTask):
                       fsldir=self.fsldir,
                       antspath=self.antspath,
                       num_proc_ants=self.num_proc_ants)
+
+    def freeview(self):
+        wmparc_in_dwi = self.output()['wmparc_in_dwi']
+        with util.freesurfer_env(self.freesurfer_home, self.fsldir):
+            local['freeview']['-v',
+                              self.output()['masked_b0'],
+                              f'{wmparc_in_dwi}:colormap=lut'] & BG
