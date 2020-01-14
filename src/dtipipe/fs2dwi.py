@@ -9,6 +9,7 @@ from . import bse
 from .apply_antsRegistrationSyNMI import apply_antsRegistrationSyNMI
 from . import util
 from . import TEST_DATA
+from . import REPO_DIR
 
 
 log = logging.getLogger(__name__)
@@ -16,7 +17,8 @@ NUM_PROC_ANTS = 10
 
 
 def fs2dwi(freesurfer_recon_dir, dwi_file, dwi_mask_file, output_dir,
-           freesurfer_home, fsldir, antspath, num_proc_ants=NUM_PROC_ANTS, debug=False):
+           freesurfer_home, fsldir, antspath, num_proc_ants=NUM_PROC_ANTS, make_brainres=False,
+           debug=False):
     """
     Registers Freesurfer labelmap to DWI space.
     """
@@ -33,6 +35,7 @@ def fs2dwi(freesurfer_recon_dir, dwi_file, dwi_mask_file, output_dir,
         brain_nii = tmpdir / "brain.nii.gz"
         wmparc_nii = tmpdir / "wmparc.nii.gz"
         wmparc_in_dwi = tmpdir / 'wmparc_in_dwi.nii.gz'
+        brain_in_dwi = tmpdir / 'brain_in_dwi.nii.gz'
         wmparc_in_dwi_brainres = tmpdir / 'wmparc_in_dwi_brainres.nii.gz'
 
         log.info("Convert brain.mgz to nifti")
@@ -57,15 +60,34 @@ def fs2dwi(freesurfer_recon_dir, dwi_file, dwi_mask_file, output_dir,
             if resolution.ptp():
                 raise Exception(f'Resolution is not uniform among all the axes: {resolution}')
 
-        log.info(f'Register wmparc to B0 (Make "{wmparc_in_dwi}")')
-        apply_antsRegistrationSyNMI(moving_image=brain_nii,
-                                    fixed_image=masked_b0,
-                                    moving_image_src=wmparc_nii,
-                                    output=wmparc_in_dwi,
-                                    num_proc=num_proc_ants,
-                                    antspath=antspath)
+        with util.ants_env(antspath), local.tempdir() as tmpdir:
+            output_prefix = tmpdir / 'brain_to_b0'
+            affine = output_prefix + '0GenericAffine.mat'
+            warp = output_prefix + '1Warp.nii.gz'
+            log.info(f'Compute warp from brain to masked B0')
+            r = local[REPO_DIR / 'scripts' / 'antsRegistrationSyNMI.sh'].run(['-m', brain_nii,
+                                                                              '-f', masked_b0,
+                                                                              '-o', output_prefix,
+                                                                              '-n', num_proc_ants])
+            log.debug(f'antsRegistrationSyNMI.sh: {r}')
+            log.info(f'Warp wmparc to B0 (Make "{wmparc_in_dwi}")')
+            r = local['antsApplyTransforms'].run(['-d', '3',
+                                                  '-i', wmparc_nii,
+                                                  '-t', warp, affine,
+                                                  '-r', masked_b0,
+                                                  '-o', wmparc_in_dwi,
+                                                  '--interpolation', 'NearestNeighbor'])
+            log.debug(f'antsApplyTransforms: {r}')
+            log.info(f'Warp brain to B0 (Make "{brain_in_dwi}")')
+            r = local['antsApplyTransforms'].run(['-d', '3',
+                                                  '-i', brain_nii,
+                                                  '-t', warp, affine,
+                                                  '-r', masked_b0,
+                                                  '-o', brain_in_dwi,
+                                                  '--interpolation', 'NearestNeighbor'])
+            log.debug(f'antsApplyTransforms: {r}')
 
-        if (dwi_resolution != brain_resolution).any():
+        if (dwi_resolution != brain_resolution).any() and make_brainres:
             log.info('DWI resolution is different from FreeSurfer brain resolution: '
                      f'{dwi_resolution} != {brain_resolution}')
             log.info(f'Resample B0 to brain resolution (Make "{masked_b0_brainres}")')
@@ -86,6 +108,7 @@ def fs2dwi(freesurfer_recon_dir, dwi_file, dwi_mask_file, output_dir,
 
         masked_b0.copy(output_dir)
         wmparc_in_dwi.copy(output_dir)
+        brain_in_dwi.copy(output_dir)
         if masked_b0_brainres.exists():
             masked_b0_brainres.copy(output_dir)
             wmparc_in_dwi_brainres.copy(output_dir)
@@ -105,6 +128,7 @@ def test_fs2dwi(freesurfer_home, fsldir, antspath, num_proc_ants):
                dwi_file=dwi_file,
                dwi_mask_file=dwi_mask_file,
                output_dir=output_dir,
+               make_brainres=False,
                freesurfer_home=freesurfer_home,
                fsldir=fsldir,
                antspath=antspath,
