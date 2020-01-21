@@ -1,5 +1,5 @@
 
-from luigi import FloatParameter, Parameter, OptionalParameter, IntParameter
+from luigi import FloatParameter, Parameter, OptionalParameter, IntParameter, BoolParameter
 from plumbum import local, BG
 
 from dtipipe import fs2dwi
@@ -22,6 +22,7 @@ class WmparcInDwi(BaseTask):
 
     # Parameters
     dwi_bet_mask_threshold = FloatParameter()
+    wmparc_in_dwi_make_brainres = BoolParameter(default=False)
 
     # Software
     dcm2niix_bin = Parameter(default='dcm2niix')
@@ -43,16 +44,20 @@ class WmparcInDwi(BaseTask):
 
     def output(self):
         output_dir = self.output_dir()
-        return dict(wmparc_in_dwi=output_dir / 'wmparc_in_dwi.nii.gz',
-                    wmparc_in_dwi_brainres=output_dir / 'wmparc_in_dwi_brainres.nii.gz',
-                    masked_b0=output_dir / 'masked_b0.nii.gz',
-                    masked_b0_brainres=output_dir / 'masked_b0_brainres.nii.gz')
+        result = dict(wmparc_in_dwi=output_dir / 'wmparc_in_dwi.nii.gz',
+                      brain_in_dwi=output_dir / 'brain_in_dwi.nii.gz',
+                      masked_b0=output_dir / 'masked_b0.nii.gz')
+        if self.wmparc_in_dwi_make_brainres:
+            result['wmparc_in_dwi_brainres'] = output_dir / 'wmparc_in_dwi_brainres.nii.gz'
+            result['masked_b0_brainres'] = output_dir / 'masked_b0_brainres.nii.gz'
+        return result
 
     def run(self):
         fs2dwi.fs2dwi(freesurfer_recon_dir=self.input()['freesurfer_recon_dir'],
                       dwi_file=self.input()['dwi']['nii.gz'],
                       dwi_mask_file=self.input()['dwi_mask'],
                       output_dir=self.output_dir(),
+                      make_brainres=self.wmparc_in_dwi_make_brainres,
                       freesurfer_home=self.freesurfer_home,
                       fsldir=self.fsldir,
                       antspath=self.antspath,
