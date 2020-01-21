@@ -28,7 +28,6 @@ def bet_mask(input_file, output_file, bet_threshold=DEFAULT_BET_THRESHOLD, fsldi
 
     with util.fsl_env(fsldir), local.tempdir() as tmpdir:
         bet = local['bet']
-        tmpdir = local.path('/tmp/bet')
 
         if len(shape) == 3:
             log.info(f'Make BSL bet mask for 3D input image: {input_file}')
@@ -39,9 +38,8 @@ def bet_mask(input_file, output_file, bet_threshold=DEFAULT_BET_THRESHOLD, fsldi
 
         elif len(shape) == 4:
             log.info(f'Make BSL bet mask for input DWI: {input_file}')
-            tmp_bse = tmpdir / 'bse.nii.gz'
-            bse.bse(input_file, tmp_bse, extract_type='first')
-            bet(tmp_bse, tmpdir / 'bse', '-m', '-n', '-f', bet_threshold)
+            bse.bse(input_file, tmpdir / 'bse.nii.gz', extract_type='first')
+            bet(tmpdir / 'bse.nii.gz', tmpdir / 'bse', '-m', '-n', '-f', bet_threshold)
             log.debug(f'Output files: {tmpdir // "*"}')
             local.path(output_file).parent.mkdir()
             (tmpdir / 'bse_mask.nii.gz').copy(output_file)
@@ -55,7 +53,6 @@ def bet_mask(input_file, output_file, bet_threshold=DEFAULT_BET_THRESHOLD, fsldi
 # TODO add test for 3D
 def test_bet_mask(fsldir):
     with local.tempdir() as tmpdir:
-        tmpdir = local.path('/tmp')  # FIXME
         input_file = TEST_DATA / 'dwi.nii.gz'
         output_file = tmpdir / f'dwi_mask.nii.gz'
         expected_output_file = TEST_DATA / f'dwi_mask.nii.gz'
