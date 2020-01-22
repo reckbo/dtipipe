@@ -20,7 +20,8 @@ class Ukf(BaseTask):
                     dwi_mask=self.clone(DwiBetMask))
 
     def output(self):
-        return local.path(self.output_session_dir) / f'{self.output_basename}.vtk'
+        output_basename = self.input()['dwi_eddy']['nii.gz'].stem
+        return local.path(self.output_session_dir) / f'{output_basename}.vtk'
 
     def run(self):
         ukf.ukf(dwi_file=self.input()['dwi_eddy']['nii.gz'],

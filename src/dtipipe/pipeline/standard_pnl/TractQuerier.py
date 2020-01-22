@@ -1,3 +1,4 @@
+import os
 from luigi import Parameter, IntParameter
 import luigi.util
 
@@ -15,7 +16,7 @@ DEFAULT_QUERY_FILE = REPO_DIR / 'scripts' / 'wmql-2.0.qry'
 
 @luigi.util.inherits(WmparcInDwi)
 @luigi.util.inherits(Ukf)
-class UkfTracts(BaseTask):
+class TractQuerier(BaseTask):
 
     tract_querier_query_file = Parameter(default=DEFAULT_QUERY_FILE)
     num_proc_ukf_tract_querier = IntParameter()
@@ -25,8 +26,9 @@ class UkfTracts(BaseTask):
                     wmparc_in_dwi=self.clone(WmparcInDwi))
 
     def output(self):
-        stem = local.path(self.tract_querier_query_file).stem
-        return local.path(self.output_session_dir) / f'{self.output_basename}.tracts.{stem}'
+        output_basename = self.input()['ukf'].stem
+        stem = os.path.basename(str(self.tract_querier_query_file))[:-4]
+        return local.path(self.output_session_dir) / f'{output_basename}_tract_querier_{stem}'
 
     def run(self):
         ukf_tract_querier.ukf_tract_querier(ukf_vtk=self.input()['ukf'],

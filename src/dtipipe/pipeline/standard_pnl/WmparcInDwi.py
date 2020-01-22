@@ -22,7 +22,8 @@ class WmparcInDwi(BaseTask):
 
     # Parameters
     dwi_bet_mask_threshold = FloatParameter()
-    wmparc_in_dwi_make_brainres = BoolParameter(default=False)
+    wmparc_in_dwi_make_brainres = BoolParameter(default=False,
+                                                parsing=BoolParameter.EXPLICIT_PARSING)
 
     # Software
     dcm2niix_bin = Parameter(default='dcm2niix')

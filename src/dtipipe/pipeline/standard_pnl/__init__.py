@@ -1,3 +1,6 @@
+import logging
+import coloredlogs
+
 from .BaseTask import BaseTask
 from .InputFreesurferRecon import InputFreesurferRecon
 from .DicomDir import DicomDir
@@ -6,4 +9,7 @@ from .DwiEddy import DwiEddy
 from .DwiBetMask import DwiBetMask
 from .WmparcInDwi import WmparcInDwi
 from .Ukf import Ukf
-from .UkfTracts import UkfTracts
+from .TractQuerier import TractQuerier
+
+
+coloredlogs.install(level='INFO', logger=logging.getLogger(''))

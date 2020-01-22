@@ -55,14 +55,16 @@ def ukf(dwi_file, dwi_mask_file, output_vtk, ukftractography_bin='UKFTractograph
 
         log.info('Run UKF tractography')
         UKFTractography = local[ukftractography_bin]
-        UKFTractography('--dwiFile', dwi_nrrd,
-                        '--maskFile', dwi_mask_nrrd,
-                        '--seedsFile', dwi_mask_nrrd,
-                        '--tracts', output_vtk,
-                        '--recordTensors',
-                        '--freeWater',
-                        '--recordFreeWater',
-                        *ukf_params)
+        cmd = UKFTractography.bound_command('--dwiFile', dwi_nrrd,
+                                            '--maskFile', dwi_mask_nrrd,
+                                            '--seedsFile', dwi_mask_nrrd,
+                                            '--tracts', output_vtk,
+                                            '--recordTensors',
+                                            '--freeWater',
+                                            '--recordFreeWater',
+                                            *ukf_params)
+        log.info(f'Running: {cmd}')
+        cmd()
 
 
 @pytest.mark.slow
