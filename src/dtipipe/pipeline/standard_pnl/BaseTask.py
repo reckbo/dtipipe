@@ -19,7 +19,7 @@ class BaseMethods(object):
         self.build(**kwargs)
 
     def clone_self(self, **kwargs):
-        return self.clone(self.__cls__, **kwargs)
+        return self.clone(self.__class__, **kwargs)
 
     def commandline_args(self):
         kwargs = self.param_kwargs

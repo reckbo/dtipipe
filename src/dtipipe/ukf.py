@@ -25,12 +25,16 @@ UKF_DEFAULT_PARAMS = {'numTensor': 2,
                       'seedsPerVoxel': 10}
 
 
-def ukf(dwi_file, dwi_mask_file, output_vtk, ukftractography_bin='UKFTractography', **ukf_params):
+def ukf(dwi_file, dwi_mask_file, output_vtk, ukf_params=None,
+        ukf_tractography_bin='UKFTractography',
+        tmpdir=None):
     """
     Run UKFTractography given a DWI and DWI mask in NIFTI format.
     """
 
-    with local.tempdir() as tmpdir:
+    with local.tempdir() as tmpdir_:
+        if not tmpdir:
+            tmpdir = tmpdir_
         dwi_short = tmpdir / 'dwi_short.nii.gz'
         dwi_mask_short = tmpdir / 'mask_short.nii.gz'
 
@@ -50,11 +54,11 @@ def ukf(dwi_file, dwi_mask_file, output_vtk, ukftractography_bin='UKFTractograph
                               dwi_nrrd)
         nifti2nhdr.nifti2nhdr(str(dwi_mask_short), None, None, dwi_mask_nrrd)
 
-        ukf_params = {**UKF_DEFAULT_PARAMS, **ukf_params}
-        ukf_params = toolz.concat([[f'--{param}', val] for (param, val) in ukf_params.items()])
+        ukf_params = UKF_DEFAULT_PARAMS if not ukf_params else {**UKF_DEFAULT_PARAMS, **ukf_params}
+        ukf_param_args = toolz.concat([[f'--{param}', val] for (param, val) in ukf_params.items()])
 
         log.info('Run UKF tractography')
-        UKFTractography = local[ukftractography_bin]
+        UKFTractography = local[ukf_tractography_bin]
         cmd = UKFTractography.bound_command('--dwiFile', dwi_nrrd,
                                             '--maskFile', dwi_mask_nrrd,
                                             '--seedsFile', dwi_mask_nrrd,
@@ -62,20 +66,20 @@ def ukf(dwi_file, dwi_mask_file, output_vtk, ukftractography_bin='UKFTractograph
                                             '--recordTensors',
                                             '--freeWater',
                                             '--recordFreeWater',
-                                            *ukf_params)
+                                            *ukf_param_args)
         log.info(f'Running: {cmd}')
         cmd()
 
 
 @pytest.mark.slow
-def test_ukf(ukftractography_bin):
+def test_ukf(ukf_tractography_bin):
     input_dwi = TEST_DATA / 'dwi_eddy.nii.gz'
     input_mask = TEST_DATA / 'dwi_mask.nii.gz'
     # expected_output = TEST_DATA / 'dwi_tracts.vtk'
     with local.tempdir() as tmpdir:
         tmpdir = local.path('/tmp/ukf')
         output = tmpdir / 'tracts.vtk'
-        ukf(input_dwi, input_mask, output, ukftractography_bin=ukftractography_bin)
+        ukf(input_dwi, input_mask, output, ukf_tractography_bin=ukf_tractography_bin)
 
 
 class Cli(cli.Application):
@@ -111,6 +115,11 @@ class Cli(cli.Application):
         argtype=str,
         help="JSON dictionary of parameters for UKF, e.g. '{arg1:val1, arg2:val2}")
 
+    tmpdir = cli.SwitchAttr(
+        ['--tmpdir'],
+        argtype=cli.ExistingDirectory,
+        help='temporary directory in which to save intermediate files')
+
     log_level = cli.SwitchAttr(
         ['--log-level'],
         argtype=cli.Set("CRITICAL", "ERROR", "WARNING",
@@ -124,4 +133,6 @@ class Cli(cli.Application):
         ukf(dwi_file=self.dwi_file,
             dwi_mask_file=self.dwi_mask_file,
             output_vtk=self.output_vtk,
-            ukf_params=ukf_params)
+            ukf_tractography_bin=self.ukf_bin,
+            ukf_params=ukf_params,
+            tmpdir=self.tmpdir)

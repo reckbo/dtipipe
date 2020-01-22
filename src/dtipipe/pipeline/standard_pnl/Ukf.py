@@ -12,7 +12,7 @@ from .DwiBetMask import DwiBetMask
 @luigi.util.inherits(DwiBetMask)
 class Ukf(BaseTask):
 
-    ukftractography_bin = Parameter()
+    ukf_tractography_bin = Parameter()
     ukf_params = DictParameter()
 
     def requires(self):
@@ -27,5 +27,5 @@ class Ukf(BaseTask):
         ukf.ukf(dwi_file=self.input()['dwi_eddy']['nii.gz'],
                 dwi_mask_file=self.input()['dwi_mask'],
                 output_vtk=self.output(),
-                ukftractography_bin=self.ukftractography_bin,
+                ukf_tractography_bin=self.ukf_tractography_bin,
                 **self.ukf_params)

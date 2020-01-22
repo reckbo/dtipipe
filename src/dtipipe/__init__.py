@@ -13,6 +13,7 @@ from . import fs2dwi
 from . import nifti2nhdr
 from . import ukf
 from . import ukf_tract_querier
+from . import measuretracts
 from . import pipeline
 
 

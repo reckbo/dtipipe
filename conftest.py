@@ -42,7 +42,7 @@ def antspath(request):
 
 
 @pytest.fixture
-def ukftractography_bin(request):
+def ukf_tractography_bin(request):
     return request.config.getoption("--ukf-bin")
 
 

@@ -10,6 +10,7 @@ from .DwiBetMask import DwiBetMask
 from .WmparcInDwi import WmparcInDwi
 from .Ukf import Ukf
 from .TractQuerier import TractQuerier
+from .TractMeasures import TractMeasures
 
 
 coloredlogs.install(level='INFO', logger=logging.getLogger(''))
