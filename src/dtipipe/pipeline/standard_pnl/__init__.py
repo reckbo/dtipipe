@@ -1,6 +1,3 @@
-import logging
-import coloredlogs
-
 from .BaseTask import BaseTask
 from .InputFreesurferRecon import InputFreesurferRecon
 from .DicomDir import DicomDir
@@ -12,5 +9,5 @@ from .Ukf import Ukf
 from .TractQuerier import TractQuerier
 from .TractMeasures import TractMeasures
 
+from .CaminoDti import CaminoDti
 
-coloredlogs.install(level='INFO', logger=logging.getLogger(''))
