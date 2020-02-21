@@ -3,7 +3,7 @@ from luigi import OptionalParameter, IntParameter
 from plumbum import local
 
 from dtipipe import eddy_pnl
-from .BaseTask import BaseTask
+from ..BaseTask import BaseTask
 from .DwiNifti import DwiNifti
 
 

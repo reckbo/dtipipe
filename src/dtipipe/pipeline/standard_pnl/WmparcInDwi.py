@@ -4,7 +4,7 @@ from plumbum import local, BG
 
 from dtipipe import fs2dwi
 from dtipipe import util
-from .BaseTask import BaseTask
+from ..BaseTask import BaseTask
 from .InputFreesurferRecon import InputFreesurferRecon
 from .DwiEddy import DwiEddy
 from .DwiBetMask import DwiBetMask

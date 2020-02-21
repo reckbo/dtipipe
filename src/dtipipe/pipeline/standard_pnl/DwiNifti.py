@@ -2,7 +2,7 @@ import luigi.util
 from luigi import Parameter
 from plumbum import local
 
-from .BaseTask import BaseTask
+from ..BaseTask import BaseTask
 from .DicomDir import DicomDir
 
 

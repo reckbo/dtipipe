@@ -1,4 +1,3 @@
-from .BaseTask import BaseTask
 from .InputFreesurferRecon import InputFreesurferRecon
 from .DicomDir import DicomDir
 from .DwiNifti import DwiNifti

@@ -2,7 +2,7 @@ import luigi.util
 from luigi import OptionalParameter, FloatParameter
 from plumbum import local
 
-from .BaseTask import BaseTask
+from ..BaseTask import BaseTask
 from .DwiEddy import DwiEddy
 
 from dtipipe import bet_mask

@@ -4,7 +4,7 @@ import pandas as pd
 from plumbum import local
 
 from dtipipe.measuretracts import measureTractsFunctions
-from .BaseTask import BaseTask
+from ..BaseTask import BaseTask
 from .TractQuerier import TractQuerier
 
 

@@ -3,7 +3,7 @@ from luigi import Parameter, DictParameter
 from plumbum import local
 
 from dtipipe import ukf
-from .BaseTask import BaseTask
+from ..BaseTask import BaseTask
 from .DwiEddy import DwiEddy
 from .DwiBetMask import DwiBetMask
 

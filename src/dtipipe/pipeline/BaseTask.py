@@ -12,10 +12,12 @@ class BaseMethods(object):
         return set(toolz.concat([luigi.tools.deps.find_deps(t, None) for t in self.deps()]))
 
     def delete(self):
-        self.output().delete()
+        for output in luigi.task.flatten(self.output()):
+            output.delete()
 
     def rebuild(self, **kwargs):
-        self.delete()
+        for output in luigi.task.flatten(self.output()):
+            output.delete()
         self.build(**kwargs)
 
     def clone_self(self, **kwargs):

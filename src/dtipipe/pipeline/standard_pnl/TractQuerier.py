@@ -6,7 +6,7 @@ from plumbum import local
 
 from dtipipe import ukf_tract_querier
 from dtipipe import REPO_DIR
-from .BaseTask import BaseTask
+from ..BaseTask import BaseTask
 from .WmparcInDwi import WmparcInDwi
 from .Ukf import Ukf
 

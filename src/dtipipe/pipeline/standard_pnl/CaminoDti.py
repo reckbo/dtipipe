@@ -3,7 +3,7 @@ from plumbum import local, BG
 import luigi.util
 import nibabel as nib
 
-from .BaseTask import BaseTask
+from ..BaseTask import BaseTask
 from .DwiEddy import DwiEddy
 
 
@@ -53,8 +53,11 @@ class CaminoDti(BaseTask):
         make_eig_cmd()
 
     def qc(self):
+        log = logging.getLogger(__name__)
         dims = nib.load(str(self.input()['nii.gz'])).shape
-        local['pdview']['-inputdatatype', 'float',
-                        '-inputmodel', 'dteig',
-                        '-inputfile', self.output()['dti_eig'],
-                        '-datadims', dims[0], dims[1], dims[2]] & BG
+        cmd = local['pdview']['-inputdatatype', 'float',
+                              '-inputmodel', 'dteig',
+                              '-inputfile', self.output()['dti_eig'],
+                              '-datadims', dims[0], dims[1], dims[2]]
+        log.info(f'Running: {cmd}')
+        cmd & BG
