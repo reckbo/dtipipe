@@ -9,17 +9,19 @@ from .. import standard_pnl
 from ..BaseTask import BaseTask
 
 
+OUTPUT_SUFFIXES = ['b0', 'dwi', 'e1', 'e2', 'e3', 'fa', 'tensor']
+
 @luigi.util.requires(standard_pnl.DwiEddy)
 class Dti(BaseTask):
 
     dtk_dir = Parameter()
 
     def output(self):
-        dwi_eddy_nifti = self.input()['nii.gz']
-        dti_filename = dwi_eddy_nifti.name[:-7] + '_dti.nii.gz'
-        gradient_matrix_filename = dwi_eddy_nifti.name[:-7] + '_dti.csv'
-        return dict(nifti=dwi_eddy_nifti.parent / 'dtk' / dti_filename,
-                    gradient_matrix=dwi_eddy_nifti.parent / 'dtk' / gradient_matrix_filename)
+        output_prefix = self.output_prefix()
+        result = dict(gradient_matrix=local.path(output_prefix + '.csv'))
+        for output_suffix in OUTPUT_SUFFIXES:
+            result[output_suffix] = local.path(output_prefix + '_' + output_suffix + '.nii.gz')
+        return result
 
     def run(self):
         log = logging.getLogger('luigi-interface')
@@ -29,11 +31,15 @@ class Dti(BaseTask):
                                   self.output()['gradient_matrix'])
         dti_recon = local[self.dtk_dir + '/dti_recon']
         cmd = dti_recon[self.input()['nii.gz'],
-                        self.output()['nifti'].with_suffix('', depth=2),
+                        self.output_prefix(),
                         '-gm', self.output()['gradient_matrix'],
                         '-ot', 'nii.gz']
         log.info(f'Running: {cmd}')
         cmd()
+
+    def output_prefix(self):
+        dwi_eddy_nifti = self.input()['nii.gz']
+        return str(dwi_eddy_nifti.parent / 'dtk' / dwi_eddy_nifti.name[:-7] + '_dti')
 
     @staticmethod
     def make_gradient_matrix(bvec, bval, output):
