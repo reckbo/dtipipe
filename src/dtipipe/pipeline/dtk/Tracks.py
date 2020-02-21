@@ -2,7 +2,7 @@ import logging
 
 import luigi.util
 from luigi import IntParameter, Parameter, FloatParameter
-from plumbum import local
+from plumbum import local, BG
 
 from ..BaseTask import BaseTask
 from ..standard_pnl import DwiBetMask
@@ -45,3 +45,6 @@ class Tracks(BaseTask):
                                 self.output()]
             log.info(f'Running: {cmd}')
             cmd()
+
+    def qc(self):
+        local[self.dtk_dir + '/trackvis'][self.output()] & BG

@@ -3,13 +3,14 @@ import logging
 from plumbum import local
 import pandas as pd
 import luigi.util
-from luigi import Parameter, IntParameter
+from luigi import Parameter
 
 from .. import standard_pnl
 from ..BaseTask import BaseTask
 
 
 OUTPUT_SUFFIXES = ['b0', 'dwi', 'e1', 'e2', 'e3', 'fa', 'tensor']
+
 
 @luigi.util.requires(standard_pnl.DwiEddy)
 class Dti(BaseTask):
